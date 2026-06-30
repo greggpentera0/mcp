@@ -4,6 +4,10 @@ import path from 'node:path';
 
 import spawn from 'cross-spawn';
 
+import {
+  getOpenCodeExecutable,
+  readOpenCodeConfigModels,
+} from '@/modules/providers/list/opencode/opencode-config.js';
 import type { IProviderAuth } from '@/shared/interfaces.js';
 import type { ProviderAuthStatus } from '@/shared/types.js';
 import { readObjectRecord, readOptionalString } from '@/shared/utils.js';
@@ -30,7 +34,7 @@ export class OpenCodeProviderAuth implements IProviderAuth {
    */
   private checkInstalled(): boolean {
     try {
-      const result = spawn.sync('opencode', ['--version'], { stdio: 'ignore', timeout: 5000 });
+      const result = spawn.sync(getOpenCodeExecutable(), ['--version'], { stdio: 'ignore', timeout: 5000 });
       return !result.error && result.status === 0;
     } catch {
       return false;
@@ -98,6 +102,15 @@ export class OpenCodeProviderAuth implements IProviderAuth {
         authenticated: true,
         email: envCredential,
         method: 'environment',
+      };
+    }
+
+    const configModels = await readOpenCodeConfigModels().catch(() => null);
+    if (configModels && configModels.models.length > 0) {
+      return {
+        authenticated: true,
+        email: configModels.filePath,
+        method: 'config_file',
       };
     }
 

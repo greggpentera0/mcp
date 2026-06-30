@@ -38,6 +38,7 @@ interface UseChatComposerStateArgs {
   claudeModel: string;
   codexModel: string;
   geminiModel: string;
+  antigravityModel: string;
   opencodeModel: string;
   isLoading: boolean;
   canAbortSession: boolean;
@@ -172,6 +173,7 @@ export function useChatComposerState({
   claudeModel,
   codexModel,
   geminiModel,
+  antigravityModel,
   opencodeModel,
   isLoading,
   canAbortSession,
@@ -334,6 +336,8 @@ export function useChatComposerState({
               ? codexModel
               : provider === 'gemini'
                 ? geminiModel
+                : provider === 'antigravity'
+                  ? antigravityModel
                 : provider === 'opencode'
                   ? opencodeModel
                   : claudeModel,
@@ -386,6 +390,7 @@ export function useChatComposerState({
     },
     [
       claudeModel,
+      antigravityModel,
       codexModel,
       currentSessionId,
       cursorModel,
@@ -699,10 +704,12 @@ export function useChatComposerState({
               ? 'cursor-tools-settings'
               : provider === 'codex'
                 ? 'codex-settings'
-                : provider === 'gemini'
-                  ? 'gemini-settings'
-                  : provider === 'opencode'
-                    ? 'opencode-settings'
+            : provider === 'gemini'
+              ? 'gemini-settings'
+              : provider === 'antigravity'
+                ? 'antigravity-settings'
+              : provider === 'opencode'
+                ? 'opencode-settings'
                   : 'claude-settings';
           const savedSettings = safeLocalStorage.getItem(settingsKey);
           if (savedSettings) {
@@ -725,10 +732,12 @@ export function useChatComposerState({
           ? cursorModel
           : provider === 'codex'
             ? codexModel
-            : provider === 'gemini'
-              ? geminiModel
-              : provider === 'opencode'
-                ? opencodeModel
+          : provider === 'gemini'
+            ? geminiModel
+            : provider === 'antigravity'
+              ? antigravityModel
+            : provider === 'opencode'
+              ? opencodeModel
                 : claudeModel;
 
       // One message shape for every provider. The backend resolves the
@@ -768,6 +777,7 @@ export function useChatComposerState({
       selectedSession,
       attachedImages,
       claudeModel,
+      antigravityModel,
       codexModel,
       currentSessionId,
       cursorModel,

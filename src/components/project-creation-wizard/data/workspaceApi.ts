@@ -1,4 +1,5 @@
 import { api } from '../../../utils/api';
+import { IS_AUTH_DISABLED } from '../../../constants/config';
 import type {
   BrowseFilesystemResponse,
   CloneProgressEvent,
@@ -133,7 +134,7 @@ const buildCloneProgressQuery = ({
 
   // EventSource cannot send custom headers, so the auth token is passed as query.
   const authToken = localStorage.getItem('auth-token');
-  if (authToken) {
+  if (!IS_AUTH_DISABLED && authToken) {
     query.set('token', authToken);
   }
 

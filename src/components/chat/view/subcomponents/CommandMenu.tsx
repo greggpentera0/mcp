@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CornerDownLeft,
   Folder,
@@ -26,7 +27,7 @@ type CommandMenuProps = {
   selectedIndex?: number;
   onSelect?: (command: CommandMenuCommand, index: number, isHover: boolean) => void;
   onClose: () => void;
-  position?: { top: number; left: number; bottom?: number };
+  position?: { top: number; left: number; width?: number; height?: number; bottom?: number };
   isOpen?: boolean;
   frequentCommands?: CommandMenuCommand[];
 };
@@ -76,6 +77,7 @@ const namespaceAccentClasses: Record<string, string> = {
 };
 
 const MENU_EDGE_GAP = 16;
+const MENU_ANCHOR_GAP = 8;
 const MENU_MAX_HEIGHT = 360;
 
 const getCommandKey = (command: CommandMenuCommand) =>
@@ -88,35 +90,50 @@ const getNamespaceIcon = (namespace: string) => namespaceIcons[namespace] || nam
 const getNamespaceAccentClass = (namespace: string) =>
   namespaceAccentClasses[namespace] || namespaceAccentClasses.other;
 
-const getMenuPosition = (position: { top: number; left: number; bottom?: number }): CSSProperties => {
+const getMenuPosition = (
+  position: { top: number; left: number; width?: number; height?: number },
+  measuredMenuHeight: number,
+): CSSProperties => {
   if (typeof window === 'undefined') {
     return { position: 'fixed', top: '16px', left: '16px' };
   }
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const anchorTop = Math.max(MENU_EDGE_GAP, position.top || viewportHeight - 90);
+  const availableAbove = Math.max(0, anchorTop - MENU_ANCHOR_GAP - MENU_EDGE_GAP);
+  const maxHeight = Math.max(
+    80,
+    Math.min(MENU_MAX_HEIGHT, viewportHeight - (MENU_EDGE_GAP * 2), availableAbove || MENU_MAX_HEIGHT),
+  );
+  const menuHeight = Math.min(measuredMenuHeight || maxHeight, maxHeight);
+  const top = Math.max(
+    MENU_EDGE_GAP,
+    Math.min(anchorTop - MENU_ANCHOR_GAP - menuHeight, viewportHeight - MENU_EDGE_GAP - menuHeight),
+  );
+
   if (window.innerWidth < 640) {
-    const anchorBottom = Math.max(MENU_EDGE_GAP, position.bottom ?? 90);
     return {
       position: 'fixed',
-      bottom: `${anchorBottom}px`,
-      left: '16px',
-      right: '16px',
-      width: 'auto',
+      top: `${top}px`,
+      left: `${MENU_EDGE_GAP}px`,
+      width: `${Math.max(0, viewportWidth - (MENU_EDGE_GAP * 2))}px`,
       maxWidth: 'calc(100vw - 32px)',
-      maxHeight: `min(54vh, calc(100vh - ${anchorBottom}px - ${MENU_EDGE_GAP}px))`,
+      maxHeight: `${maxHeight}px`,
     };
   }
-  const anchorBottom = Math.max(MENU_EDGE_GAP, position.bottom ?? 90);
-  const clampedLeft = Math.max(
-    MENU_EDGE_GAP,
-    Math.min(position.left, window.innerWidth - 440 - MENU_EDGE_GAP),
+  const width = Math.min(
+    Math.max(position.width ?? 440, 320),
+    viewportWidth - (MENU_EDGE_GAP * 2),
   );
+  const left = Math.max(MENU_EDGE_GAP, Math.min(position.left, viewportWidth - width - MENU_EDGE_GAP));
 
   return {
     position: 'fixed',
-    bottom: `${anchorBottom}px`,
-    left: `${clampedLeft}px`,
-    width: 'min(440px, calc(100vw - 32px))',
+    top: `${top}px`,
+    left: `${left}px`,
+    width: `${width}px`,
     maxWidth: 'calc(100vw - 32px)',
-    maxHeight: `min(${MENU_MAX_HEIGHT}px, calc(100vh - ${anchorBottom}px - ${MENU_EDGE_GAP}px))`,
+    maxHeight: `${maxHeight}px`,
   };
 };
 
@@ -131,10 +148,12 @@ export default function CommandMenu({
 }: CommandMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const selectedItemRef = useRef<HTMLDivElement | null>(null);
-  const menuPosition = getMenuPosition(position);
+  const [measuredMenuHeight, setMeasuredMenuHeight] = useState(0);
+  const menuPosition = getMenuPosition(position, measuredMenuHeight);
 
   useEffect(() => {
     if (!isOpen) {
+      setMeasuredMenuHeight(0);
       return;
     }
     const handleClickOutside = (event: MouseEvent) => {
@@ -149,6 +168,16 @@ export default function CommandMenu({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
+  useLayoutEffect(() => {
+    if (!isOpen || !menuRef.current) {
+      return;
+    }
+    const height = Math.ceil(menuRef.current.getBoundingClientRect().height);
+    setMeasuredMenuHeight((currentHeight) => (
+      Math.abs(currentHeight - height) > 1 ? height : currentHeight
+    ));
+  }, [commands.length, frequentCommands.length, isOpen, selectedIndex]);
+
   useEffect(() => {
     if (!selectedItemRef.current || !menuRef.current) {
       return;
@@ -161,6 +190,9 @@ export default function CommandMenu({
   }, [selectedIndex]);
 
   if (!isOpen) {
+    return null;
+  }
+  if (typeof document === 'undefined') {
     return null;
   }
 
@@ -218,7 +250,7 @@ export default function CommandMenu({
   const orderedNamespaces = [...preferredOrder, ...extraNamespaces].filter((namespace) => groupedCommands[namespace]);
 
   if (commands.length === 0) {
-    return (
+    return createPortal(
       <div
         ref={menuRef}
         className="command-menu command-menu-empty border border-gray-200 bg-white/95 text-sm text-gray-500 dark:border-gray-700/80 dark:bg-gray-900/95 dark:text-gray-400"
@@ -233,11 +265,12 @@ export default function CommandMenu({
         }}
       >
         No commands available
-      </div>
+      </div>,
+      document.body,
     );
   }
 
-  return (
+  return createPortal(
     <div
       ref={menuRef}
       role="listbox"
@@ -314,6 +347,7 @@ export default function CommandMenu({
           })}
         </div>
       ))}
-    </div>
+    </div>,
+    document.body,
   );
 }

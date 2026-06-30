@@ -1,5 +1,9 @@
 import spawn from 'cross-spawn';
 
+import {
+  buildCursorAgentNotFoundMessage,
+  resolveCursorAgentExecutablePath,
+} from '@/shared/cursor-cli-path.js';
 import type { IProviderAuth } from '@/shared/interfaces.js';
 import type { ProviderAuthStatus } from '@/shared/types.js';
 
@@ -15,9 +19,11 @@ export class CursorProviderAuth implements IProviderAuth {
    * Checks whether the cursor-agent CLI is available on this host.
    */
   private checkInstalled(): boolean {
+    const cliPath = resolveCursorAgentExecutablePath();
+
     try {
-      spawn.sync('cursor-agent', ['--version'], { stdio: 'ignore', timeout: 5000 });
-      return true;
+      const result = spawn.sync(cliPath, ['--version'], { stdio: 'ignore', timeout: 5000 });
+      return !result.error && result.status === 0;
     } catch {
       return false;
     }
@@ -36,7 +42,7 @@ export class CursorProviderAuth implements IProviderAuth {
         authenticated: false,
         email: null,
         method: null,
-        error: 'Cursor CLI is not installed',
+        error: buildCursorAgentNotFoundMessage(resolveCursorAgentExecutablePath()),
       };
     }
 
@@ -57,6 +63,7 @@ export class CursorProviderAuth implements IProviderAuth {
    */
   private checkCursorLogin(): Promise<CursorLoginStatus> {
     return new Promise((resolve) => {
+      const cliPath = resolveCursorAgentExecutablePath();
       let processCompleted = false;
       let childProcess: ReturnType<typeof spawn> | undefined;
 
@@ -74,7 +81,7 @@ export class CursorProviderAuth implements IProviderAuth {
       }, 5000);
 
       try {
-        childProcess = spawn('cursor-agent', ['status']);
+        childProcess = spawn(cliPath, ['status']);
       } catch {
         clearTimeout(timeout);
         processCompleted = true;
@@ -82,7 +89,7 @@ export class CursorProviderAuth implements IProviderAuth {
           authenticated: false,
           email: null,
           method: null,
-          error: 'Cursor CLI not found or not installed',
+          error: buildCursorAgentNotFoundMessage(cliPath),
         });
         return;
       }
@@ -135,7 +142,7 @@ export class CursorProviderAuth implements IProviderAuth {
           authenticated: false,
           email: null,
           method: null,
-          error: 'Cursor CLI not found or not installed',
+          error: buildCursorAgentNotFoundMessage(cliPath),
         });
       });
     });

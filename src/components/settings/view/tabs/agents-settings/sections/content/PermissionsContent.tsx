@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { AlertTriangle, Plus, Shield, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input } from '../../../../../../../shared/view/ui';
-import type { CodexPermissionMode, GeminiPermissionMode } from '../../../../../types/types';
+import type {
+  AntigravityPermissionMode,
+  CodexPermissionMode,
+  GeminiPermissionMode,
+} from '../../../../../types/types';
 
 const COMMON_CLAUDE_TOOLS = [
   'Bash(git log:*)',
@@ -585,6 +589,82 @@ type GeminiPermissionsProps = {
   onPermissionModeChange: (value: GeminiPermissionMode) => void;
 };
 
+type AntigravityPermissionsProps = {
+  agent: 'antigravity';
+  permissionMode: AntigravityPermissionMode;
+  onPermissionModeChange: (value: AntigravityPermissionMode) => void;
+};
+
+function AntigravityPermissions({
+  permissionMode,
+  onPermissionModeChange,
+}: Omit<AntigravityPermissionsProps, 'agent'>) {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-emerald-600" />
+          <h3 className="text-lg font-medium text-foreground">Permission Mode</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Antigravity can run with normal CLI permissions or with permission prompts bypassed.
+        </p>
+
+        <div
+          className={`cursor-pointer rounded-lg border p-4 transition-all ${permissionMode === 'default'
+            ? 'border-border bg-accent'
+            : 'border-border bg-card/50 active:border-border active:bg-accent/50'
+            }`}
+          onClick={() => onPermissionModeChange('default')}
+        >
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="radio"
+              name="antigravityPermissionMode"
+              checked={permissionMode === 'default'}
+              onChange={() => onPermissionModeChange('default')}
+              className="mt-1 h-4 w-4 text-emerald-600"
+            />
+            <div>
+              <div className="font-medium text-foreground">Default</div>
+              <div className="text-sm text-muted-foreground">
+                Run `agy` with its standard permission behavior.
+              </div>
+            </div>
+          </label>
+        </div>
+
+        <div
+          className={`cursor-pointer rounded-lg border p-4 transition-all ${permissionMode === 'bypassPermissions'
+            ? 'border-orange-400 bg-orange-50 dark:border-orange-600 dark:bg-orange-900/20'
+            : 'border-border bg-card/50 active:border-border active:bg-accent/50'
+            }`}
+          onClick={() => onPermissionModeChange('bypassPermissions')}
+        >
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="radio"
+              name="antigravityPermissionMode"
+              checked={permissionMode === 'bypassPermissions'}
+              onChange={() => onPermissionModeChange('bypassPermissions')}
+              className="mt-1 h-4 w-4 text-orange-600"
+            />
+            <div>
+              <div className="flex items-center gap-2 font-medium text-orange-900 dark:text-orange-100">
+                Bypass Permissions
+                <AlertTriangle className="h-4 w-4" />
+              </div>
+              <div className="text-sm text-orange-700 dark:text-orange-300">
+                Run `agy` with `--dangerously-skip-permissions`.
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Gemini Permissions
 function GeminiPermissions({ permissionMode, onPermissionModeChange }: Omit<GeminiPermissionsProps, 'agent'>) {
   const { t } = useTranslation(['settings', 'chat']);
@@ -683,7 +763,12 @@ function GeminiPermissions({ permissionMode, onPermissionModeChange }: Omit<Gemi
   );
 }
 
-type PermissionsContentProps = ClaudePermissionsProps | CursorPermissionsProps | CodexPermissionsProps | GeminiPermissionsProps;
+type PermissionsContentProps =
+  | ClaudePermissionsProps
+  | CursorPermissionsProps
+  | CodexPermissionsProps
+  | GeminiPermissionsProps
+  | AntigravityPermissionsProps;
 
 export default function PermissionsContent(props: PermissionsContentProps) {
   if (props.agent === 'claude') {
@@ -696,6 +781,10 @@ export default function PermissionsContent(props: PermissionsContentProps) {
 
   if (props.agent === 'gemini') {
     return <GeminiPermissions {...props} />;
+  }
+
+  if (props.agent === 'antigravity') {
+    return <AntigravityPermissions {...props} />;
   }
 
   return <CodexPermissions {...props} />;

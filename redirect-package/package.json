@@ -34,7 +34,7 @@
     "ui",
     "mobile IDE"
   ],
-  "author": "CloudCLI UI Contributors",
+  "author": "MCP Playground UI Contributors",
   "dependencies": {
     "@cloudcli-ai/cloudcli": "*"
   },

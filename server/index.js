@@ -41,6 +41,11 @@ import {
     spawnOpenCode,
     abortOpenCodeSession,
 } from './opencode-cli.js';
+import {
+    spawnAntigravity,
+    abortAntigravitySession,
+} from './antigravity-cli.js';
+import { getAntigravityContextUsage } from './modules/providers/list/antigravity/antigravity-context-usage.js';
 import sessionManager from './sessionManager.js';
 import {
     stripAnsiSequences,
@@ -70,7 +75,7 @@ import { startEnabledPluginServers, stopAllPlugins, getPluginPort } from './util
 import { initializeDatabase, projectsDb, sessionsDb } from './modules/database/index.js';
 import { configureWebPush } from './services/vapid-keys.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
-import { IS_PLATFORM } from './constants/config.js';
+import { IS_AUTH_DISABLED, IS_PLATFORM } from './constants/config.js';
 import { c } from './utils/colors.js';
 
 const __dirname = getModuleDir(import.meta.url);
@@ -108,6 +113,7 @@ const server = http.createServer(app);
 // Single WebSocket server that handles chat, shell, and plugin proxy paths.
 const wss = createWebSocketServer(server, {
     verifyClient: {
+        isAuthDisabled: IS_AUTH_DISABLED,
         isPlatform: IS_PLATFORM,
         authenticateWebSocket,
     },
@@ -117,6 +123,7 @@ const wss = createWebSocketServer(server, {
             cursor: spawnCursor,
             codex: queryCodex,
             gemini: spawnGemini,
+            antigravity: spawnAntigravity,
             opencode: spawnOpenCode,
         },
         abortFns: {
@@ -124,6 +131,7 @@ const wss = createWebSocketServer(server, {
             cursor: abortCursorSession,
             codex: abortCodexSession,
             gemini: abortGeminiSession,
+            antigravity: abortAntigravitySession,
             opencode: abortOpenCodeSession,
         },
         resolveToolApproval,
@@ -1312,6 +1320,27 @@ app.get('/api/projects/:projectId/sessions/:sessionId/token-usage', authenticate
             }
         }
 
+        if (provider === 'antigravity') {
+            const usage = await getAntigravityContextUsage(
+                providerNativeSessionId,
+                sessionRow.project_path || process.cwd()
+            );
+
+            if (!usage) {
+                return res.json({
+                    used: 0,
+                    total: 0,
+                    inputTokens: 0,
+                    outputTokens: 0,
+                    breakdown: { input: 0, output: 0 },
+                    unsupported: true,
+                    message: 'Antigravity context usage is not available for this session'
+                });
+            }
+
+            return res.json(usage);
+        }
+
         // Handle Codex sessions
         if (provider === 'codex') {
             const codexSessionsDir = path.join(homeDir, '.codex', 'sessions');
@@ -1682,7 +1711,7 @@ async function getFileTree(dirPath, maxDepth = 3, currentDepth = 0, showHidden =
 }
 
 const SERVER_PORT = process.env.SERVER_PORT || 3001;
-const HOST = process.env.HOST || '0.0.0.0';
+const HOST = process.env.HOST || (IS_AUTH_DISABLED ? '127.0.0.1' : '0.0.0.0');
 const DISPLAY_HOST = getConnectableHost(HOST);
 const VITE_PORT = process.env.VITE_PORT || 5173;
 const LOCAL_SERVER_MARKER_PATH = path.join(os.homedir(), '.cloudcli', 'local-server.json');
@@ -1751,7 +1780,7 @@ async function startServer() {
 
             console.log('');
             console.log(c.dim('═'.repeat(63)));
-            console.log(`  ${c.bright('CloudCLI Server - Ready')}`);
+            console.log(`  ${c.bright('MCP Playground Server - Ready')}`);
             console.log(c.dim('═'.repeat(63)));
             console.log('');
             console.log(`${c.info('[INFO]')} Server URL:  ${c.bright('http://' + DISPLAY_HOST + ':' + SERVER_PORT)}`);

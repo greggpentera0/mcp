@@ -1,17 +1,18 @@
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  width="32"
-  height="32"
-  viewBox="0 0 32 32"
-  fill="none"
->
-  <rect width="32" height="32" rx="8" fill="hsl(221.2 83.2% 53.3%)"/>
-  <path
-    d="M8 9C8 8.44772 8.44772 8 9 8H23C23.5523 8 24 8.44772 24 9V18C24 18.5523 23.5523 19 23 19H12L8 23V9Z"
-    stroke="white"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    fill="none"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="mcpLogoGradient" x1="42" y1="34" x2="218" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#0D4FE8"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="54" fill="url(#mcpLogoGradient)"/>
+  <g stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M73 100L128 68L183 100L128 132L73 100Z"/>
+    <path d="M73 100V157L128 189L183 157V100"/>
+    <path d="M128 132V189"/>
+    <path d="M92 123L79 136L92 149"/>
+    <path d="M111 119L102 153"/>
+    <path d="M119 123L132 136L119 149"/>
+    <path d="M151 120V155L178 137L151 120Z"/>
+  </g>
 </svg>

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * CloudCLI CLI
+ * MCP Playground CLI
  *
- * Provides command-line utilities for managing CloudCLI
+ * Provides command-line utilities for managing MCP Playground
  *
  * Commands:
  *   (no args)     - Start the server (default)
@@ -90,7 +90,7 @@ function getInstallDir() {
 
 // Show status command
 function showStatus() {
-    console.log(`\n${c.bright('CloudCLI UI - Status')}\n`);
+    console.log(`\n${c.bright('MCP Playground UI - Status')}\n`);
     console.log(c.dim('═'.repeat(60)));
 
     // Version info
@@ -147,7 +147,7 @@ function showStatus() {
 function showHelp() {
     console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
-║              CloudCLI - Command Line Tool               ║
+║              MCP Playground - Command Line Tool               ║
 ╚═══════════════════════════════════════════════════════════════╝
 
 Usage:
@@ -155,7 +155,7 @@ Usage:
   cloudcli [command] [options]
 
 Commands:
-  start            Start the CloudCLI server (default)
+  start            Start the MCP Playground server (default)
   sandbox          Manage Docker sandbox environments
   browser-use-mcp  Run the Browser MCP stdio server
   status           Show configuration and data locations
@@ -322,7 +322,7 @@ function parseSandboxArgs(args) {
 
 function showSandboxHelp() {
     console.log(`
-${c.bright('CloudCLI Sandbox')} — Run CloudCLI inside Docker Sandboxes
+${c.bright('MCP Playground Sandbox')} — Run MCP Playground inside Docker Sandboxes
 
 Usage:
   cloudcli sandbox <workspace>            Create and start a sandbox
@@ -334,7 +334,7 @@ Subcommands:
   ${c.bright('start')}        Restart a stopped sandbox and re-launch the web UI
   ${c.bright('stop')}         Stop a sandbox (preserves state)
   ${c.bright('rm')}           Remove a sandbox
-  ${c.bright('logs')}         Show CloudCLI server logs
+  ${c.bright('logs')}         Show MCP Playground server logs
   ${c.bright('help')}         Show this help
 
 Options:
@@ -456,7 +456,7 @@ async function sandboxCommand(args) {
             restartRun.unref();
             await new Promise(resolve => setTimeout(resolve, 5000));
 
-            console.log(`${c.info('▶')} Launching CloudCLI web server...`);
+            console.log(`${c.info('▶')} Launching MCP Playground web server...`);
             sbx(['exec', opts.name, 'bash', '-c', 'nohup cloudcli start --port 3001 > /tmp/cloudcli-ui.log 2>&1 & disown']);
 
             console.log(`${c.info('▶')} Forwarding port ${opts.port} → 3001...`);
@@ -479,7 +479,7 @@ async function sandboxCommand(args) {
                 }
             }
 
-            console.log(`\n${c.ok('✔')} ${c.bright('CloudCLI is ready!')}`);
+            console.log(`\n${c.ok('✔')} ${c.bright('MCP Playground is ready!')}`);
             console.log(`  ${c.info('→')} ${c.bright(`http://localhost:${opts.port}`)}\n`);
             break;
         }
@@ -512,7 +512,7 @@ async function sandboxCommand(args) {
                 }
             } catch { /* sbx secret ls not available, skip check */ }
 
-            console.log(`\n${c.bright('CloudCLI Sandbox')}`);
+            console.log(`\n${c.bright('MCP Playground Sandbox')}`);
             console.log(c.dim('─'.repeat(50)));
             console.log(`  Agent:     ${c.info(opts.agent)} ${c.dim(`(${secret} credentials)`)}`);
             console.log(`  Workspace: ${c.dim(workspace)}`);
@@ -554,8 +554,8 @@ async function sandboxCommand(args) {
                 }
             }
 
-            // Step 3: Start CloudCLI inside the sandbox
-            console.log(`${c.info('▶')} Launching CloudCLI web server...`);
+            // Step 3: Start MCP Playground inside the sandbox
+            console.log(`${c.info('▶')} Launching MCP Playground web server...`);
             sbx(['exec', opts.name, 'bash', '-c', 'nohup cloudcli start --port 3001 > /tmp/cloudcli-ui.log 2>&1 & disown']);
 
             // Step 4: Forward port
@@ -580,7 +580,7 @@ async function sandboxCommand(args) {
             }
 
             // Done
-            console.log(`\n${c.ok('✔')} ${c.bright('CloudCLI is ready!')}`);
+            console.log(`\n${c.ok('✔')} ${c.bright('MCP Playground is ready!')}`);
             console.log(`  ${c.info('→')} Open ${c.bright(`http://localhost:${opts.port}`)}`);
             console.log(`\n${c.dim('  Manage with:')}`);
             console.log(`  ${c.dim('$')} sbx ls`);

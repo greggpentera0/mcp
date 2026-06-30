@@ -19,6 +19,7 @@
     "cursor": "Cursor",
     "codex": "Codex",
     "gemini": "Gemini",
+    "antigravity": "Antigravity",
     "opencode": "OpenCode"
   },
   "tools": {
@@ -162,6 +163,7 @@
       "cursor": "Ready to use Cursor with {{model}}. Start typing your message below.",
       "codex": "Ready to use Codex with {{model}}. Start typing your message below.",
       "gemini": "Ready to use Gemini with {{model}}. Start typing your message below.",
+      "antigravity": "Ready to use Antigravity with {{model}}. Start typing your message below.",
       "opencode": "Ready to use OpenCode with {{model}}. Start typing your message below.",
       "default": "Select a provider above to begin"
     },

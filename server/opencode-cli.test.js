@@ -30,12 +30,13 @@ for (const event of events) {
   if (process.platform === 'win32') {
     const commandPath = path.join(binDir, 'opencode.cmd');
     await writeFile(commandPath, '@echo off\r\nnode "%~dp0opencode.js" %*\r\n', 'utf8');
-    return;
+    return commandPath;
   }
 
   const commandPath = path.join(binDir, 'opencode');
   await writeFile(commandPath, '#!/bin/sh\nnode "$(dirname "$0")/opencode.js" "$@"\n', 'utf8');
   await chmod(commandPath, 0o755);
+  return commandPath;
 }
 
 test('spawnOpenCode emits session_created before normalized live messages for new sessions', async () => {
@@ -46,6 +47,7 @@ test('spawnOpenCode emits session_created before normalized live messages for ne
   const previousPath = process.env[pathKey];
   const previousPathExt = process.env[pathExtKey];
   const previousArgsCapture = process.env.OPENCODE_ARGS_CAPTURE;
+  const previousOpenCodePath = process.env.OPENCODE_PATH;
   const messages = [];
   const writer = {
     userId: null,
@@ -59,8 +61,9 @@ test('spawnOpenCode emits session_created before normalized live messages for ne
   };
 
   try {
-    await createFakeOpenCodeExecutable(tempRoot);
+    const fakeOpenCodePath = await createFakeOpenCodeExecutable(tempRoot);
     process.env[pathKey] = `${tempRoot}${path.delimiter}${previousPath || ''}`;
+    process.env.OPENCODE_PATH = fakeOpenCodePath;
     process.env.OPENCODE_ARGS_CAPTURE = argsCapturePath;
     if (process.platform === 'win32') {
       process.env[pathExtKey] = previousPathExt?.toUpperCase().includes('.CMD')
@@ -107,6 +110,12 @@ test('spawnOpenCode emits session_created before normalized live messages for ne
       delete process.env.OPENCODE_ARGS_CAPTURE;
     } else {
       process.env.OPENCODE_ARGS_CAPTURE = previousArgsCapture;
+    }
+
+    if (previousOpenCodePath === undefined) {
+      delete process.env.OPENCODE_PATH;
+    } else {
+      process.env.OPENCODE_PATH = previousOpenCodePath;
     }
 
     await rm(tempRoot, { recursive: true, force: true });

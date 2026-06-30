@@ -38,6 +38,13 @@ const providerCards = [
     loginButtonClassName: 'bg-teal-600 hover:bg-teal-700',
   },
   {
+    provider: 'antigravity' as const,
+    title: 'Antigravity',
+    connectedClassName: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800',
+    iconContainerClassName: 'bg-emerald-100 dark:bg-emerald-900/30',
+    loginButtonClassName: 'bg-emerald-700 hover:bg-emerald-800',
+  },
+  {
     provider: 'opencode' as const,
     title: 'OpenCode',
     connectedClassName: 'bg-zinc-100 dark:bg-zinc-800/50 border-zinc-300 dark:border-zinc-600',

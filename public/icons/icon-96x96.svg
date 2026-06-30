@@ -1,12 +1,18 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background fills entire canvas - iOS will handle corner rounding -->
-  <rect width="512" height="512" fill="hsl(240 5.9% 10%)"/>
-  
-  <!-- MessageSquare icon - scaled and centered -->
-  <path d="M128 144C128 126.327 142.327 112 160 112H352C369.673 112 384 126.327 384 144V272C384 289.673 369.673 304 352 304H224L128 400V144Z" 
-        stroke="white" 
-        stroke-width="32" 
-        stroke-linecap="round" 
-        stroke-linejoin="round" 
-        fill="none"/>
+<svg width="96" height="96" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mcpLogoGradient" x1="42" y1="34" x2="218" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#0D4FE8"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="54" fill="url(#mcpLogoGradient)"/>
+  <g stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M73 100L128 68L183 100L128 132L73 100Z"/>
+    <path d="M73 100V157L128 189L183 157V100"/>
+    <path d="M128 132V189"/>
+    <path d="M92 123L79 136L92 149"/>
+    <path d="M111 119L102 153"/>
+    <path d="M119 123L132 136L119 149"/>
+    <path d="M151 120V155L178 137L151 120Z"/>
+  </g>
 </svg>

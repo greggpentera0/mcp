@@ -1,8 +1,8 @@
 # Convert SVG Icons to PNG
 
-I've created SVG versions of the app icons that match the MessageSquare design from the sidebar. To convert them to PNG format, you can use one of these methods:
+The SVG app icons use the MCP Playground cube mark. To convert them to PNG format, use one of these methods:
 
-## Method 1: Online Converter (Easiest)
+## Method 1: Online Converter
 1. Go to https://cloudconvert.com/svg-to-png
 2. Upload each SVG file from the `/icons/` directory
 3. Download the PNG versions
@@ -44,9 +44,9 @@ done
 
 ## Icon Design
 The new icons feature:
-- Clean MessageSquare (chat bubble) design matching the sidebar
-- Primary color background with rounded corners
-- White stroke icon that's clearly visible
+- MCP Playground cube, code, and play mark
+- Blue gradient background with rounded corners
+- White stroke icon with consistent contrast
 - Consistent sizing and proportions across all sizes
 - Proper PWA-compliant format
 

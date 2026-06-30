@@ -1,4 +1,5 @@
 export { Alert, AlertTitle, AlertDescription, alertVariants } from './Alert';
+export { default as AppLogo } from './AppLogo';
 export { Badge, badgeVariants } from './Badge';
 export { Button, buttonVariants } from './Button';
 export { Confirmation, ConfirmationTitle, ConfirmationRequest, ConfirmationAccepted, ConfirmationRejected, ConfirmationActions, ConfirmationAction } from './Confirmation';
@@ -12,6 +13,8 @@ export { ScrollArea } from './ScrollArea';
 export { Reasoning, ReasoningTrigger, ReasoningContent, useReasoning } from './Reasoning';
 export { Shimmer } from './Shimmer';
 export { default as Tooltip } from './Tooltip';
+export { default as ThemeModeSelector } from './ThemeModeSelector';
+export type { ThemeMode } from './ThemeModeSelector';
 export { PromptInput, PromptInputHeader, PromptInputBody, PromptInputTextarea, PromptInputFooter, PromptInputTools, PromptInputButton, PromptInputSubmit } from './PromptInput';
 export { PillBar, Pill } from './PillBar';
 export { Queue, QueueItem, QueueItemIndicator, QueueItemContent } from './Queue';

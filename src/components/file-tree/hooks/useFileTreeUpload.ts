@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 
-import { IS_PLATFORM } from '../../../constants/config';
+import { IS_AUTH_DISABLED, IS_PLATFORM } from '../../../constants/config';
 import type { Project } from '../../../types/app';
 import {
   MAX_FILE_UPLOAD_COUNT,
@@ -115,7 +115,7 @@ const uploadFormDataWithProgress = (
     xhr.open('POST', `/api/projects/${encodeURIComponent(projectId)}/files/upload`);
 
     const token = localStorage.getItem('auth-token');
-    if (!IS_PLATFORM && token) {
+    if (!IS_PLATFORM && !IS_AUTH_DISABLED && token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     }
 
@@ -131,7 +131,7 @@ const uploadFormDataWithProgress = (
 
     xhr.onload = () => {
       const refreshedToken = xhr.getResponseHeader('X-Refreshed-Token');
-      if (refreshedToken) {
+      if (!IS_AUTH_DISABLED && refreshedToken) {
         localStorage.setItem('auth-token', refreshedToken);
       }
 

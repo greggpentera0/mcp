@@ -154,6 +154,14 @@
       "label": "Dark Mode",
       "description": "Toggle between light and dark themes"
     },
+    "theme": {
+      "title": "Theme",
+      "label": "Theme Preference",
+      "description": "Use your system appearance, or choose light or dark mode.",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "projectSorting": {
       "label": "Project Sorting",
       "description": "How projects are ordered in the sidebar",
@@ -355,6 +363,9 @@
       "gemini": {
         "description": "Google Gemini AI assistant"
       },
+      "antigravity": {
+        "description": "Antigravity CLI assistant"
+      },
       "opencode": {
         "description": "OpenCode CLI assistant"
       }
@@ -452,6 +463,8 @@
       "claude": "Model Context Protocol servers provide additional tools and data sources to Claude",
       "cursor": "Model Context Protocol servers provide additional tools and data sources to Cursor",
       "codex": "Model Context Protocol servers provide additional tools and data sources to Codex",
+      "gemini": "Model Context Protocol servers provide additional tools and data sources to Gemini",
+      "antigravity": "Model Context Protocol servers provide additional tools and data sources to Antigravity",
       "opencode": "Model Context Protocol servers provide additional tools and data sources to OpenCode"
     },
     "addButton": "Add MCP Server",
@@ -478,7 +491,7 @@
     },
     "managed": {
       "badge": "Managed",
-      "hint": "Managed by CloudCLI."
+      "hint": "Managed by MCP Playground."
     },
     "help": {
       "title": "About Codex MCP",
@@ -510,7 +523,7 @@
     "docs": "Docs",
     "sections": {
       "officialTitle": "Official Plugins",
-      "officialDescription": "Maintained by the CloudCLI team and ready for direct install.",
+      "officialDescription": "Maintained by the MCP Playground team and ready for direct install.",
       "unofficialTitle": "Other Plugins",
       "unofficialDescription": "Unofficial plugins and integrations from other users. Review the source before installing."
     },
@@ -538,10 +551,10 @@
       "description": "Watch long-running Claude Code sessions for hangs and expose process controls.",
       "install": "Install"
     },
-    "prismCloudCLI": {
-      "name": "PRISM CloudCLI",
+    "prismMcpPlayground": {
+      "name": "PRISM MCP Playground",
       "badge": "unofficial",
-      "description": "Session intelligence for Claude Code, inside CloudCLI. See why your sessions are burning tokens without leaving the browser.",
+      "description": "Session intelligence for Claude Code, inside MCP Playground. See why your sessions are burning tokens without leaving the browser.",
       "install": "Install"
     },
     "sessionManagerPlugin": {

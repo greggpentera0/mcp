@@ -161,6 +161,13 @@ function buildShellCommand(
     return initialCommand || 'opencode';
   }
 
+  if (provider === 'antigravity') {
+    if (resumeSessionId) {
+      return `agy --conversation "${resumeSessionId}"`;
+    }
+    return initialCommand || 'agy';
+  }
+
   const command = initialCommand || 'claude';
   if (resumeSessionId) {
     if (os.platform() === 'win32') {
@@ -479,6 +486,8 @@ export function handleShellConnection(
                 ? 'Codex'
                 : provider === 'gemini'
                   ? 'Gemini'
+                  : provider === 'antigravity'
+                    ? 'Antigravity'
                   : provider === 'opencode'
                     ? 'OpenCode'
                   : 'Claude';

@@ -3,6 +3,7 @@ import type { VerifyClientCallbackSync } from 'ws';
 import type { AuthenticatedWebSocketRequest } from '@/shared/types.js';
 
 type WebSocketAuthDependencies = {
+  isAuthDisabled: boolean;
   isPlatform: boolean;
   authenticateWebSocket: (token: string | null) => {
     id?: string | number;
@@ -28,16 +29,16 @@ export function verifyWebSocketClient(
 
   console.log('WebSocket connection attempt to:', `${loggedUrl.pathname}${loggedUrl.search}`);
 
-  // Platform mode: use the first DB user and skip token checks.
-  if (dependencies.isPlatform) {
+  // Platform and local auth-disabled modes use the first DB user and skip token checks.
+  if (dependencies.isPlatform || dependencies.isAuthDisabled) {
     const user = dependencies.authenticateWebSocket(null);
     if (!user) {
-      console.log('[WARN] Platform mode: No user found in database');
+      console.log('[WARN] WebSocket auth bypass failed: No user found in database');
       return false;
     }
 
     request.user = user;
-    console.log('[OK] Platform mode WebSocket authenticated for user:', user.username);
+    console.log('[OK] WebSocket auth bypass accepted for user:', user.username);
     return true;
   }
 

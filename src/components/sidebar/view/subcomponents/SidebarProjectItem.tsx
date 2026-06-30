@@ -262,18 +262,18 @@ export default function SidebarProjectItem({
         <Button
           variant="ghost"
           className={cn(
-            'hidden md:flex w-full justify-between p-2 h-auto font-normal hover:bg-accent/50',
-            isSelected && 'bg-accent text-accent-foreground',
+            'hidden h-auto w-full justify-between rounded-lg border border-transparent p-2 font-normal transition-all duration-150 hover:bg-accent/50 md:flex',
+            isSelected && 'border-primary/20 bg-primary/5 text-accent-foreground',
             isStarred &&
               !isSelected &&
-              'bg-yellow-50/50 dark:bg-yellow-900/10 hover:bg-yellow-100/50 dark:hover:bg-yellow-900/20',
+              'border-yellow-200/30 bg-yellow-50/50 hover:bg-yellow-100/50 dark:border-yellow-800/30 dark:bg-yellow-900/10 dark:hover:bg-yellow-900/20',
           )}
           onClick={selectAndToggleProject}
         >
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <div
               className={cn(
-                'w-6 h-6 flex items-center justify-center rounded cursor-pointer transition-all duration-200',
+                'flex h-6 w-6 cursor-pointer items-center justify-center rounded-md transition-all duration-200',
                 isStarred
                   ? 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
                   : 'opacity-40 hover:opacity-100 hover:bg-accent',
@@ -312,23 +312,17 @@ export default function SidebarProjectItem({
                       }
                     }}
                   />
-                  <div className="truncate text-xs text-muted-foreground" title={project.fullPath}>
-                    {project.fullPath}
+                  <div className="text-xs text-muted-foreground">
+                    {sessionCountLabel}
                   </div>
                 </div>
               ) : (
-                <div>
+                <div className="min-w-0">
                   <div className="truncate text-sm font-normal text-foreground" title={project.displayName}>
                     {project.displayName}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {sessionCountDisplay}
-                    {project.fullPath !== project.displayName && (
-                      <span className="ml-1 opacity-60" title={project.fullPath}>
-                        {' - '}
-                        {project.fullPath.length > 25 ? `...${project.fullPath.slice(-22)}` : project.fullPath}
-                      </span>
-                    )}
+                    {sessionCountLabel}
                   </div>
                 </div>
               )}

@@ -1,6 +1,6 @@
-# Contributing to CloudCLI UI
+# Contributing to MCP Playground UI
 
-Thanks for your interest in contributing to CloudCLI UI! Before you start, please take a moment to read through this guide.
+Thanks for your interest in contributing to MCP Playground UI! Before you start, please take a moment to read through this guide.
 
 ## Before You Start
 

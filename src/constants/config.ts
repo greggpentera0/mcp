@@ -5,6 +5,12 @@
 export const IS_PLATFORM = import.meta.env.VITE_IS_PLATFORM === 'true';
 
 /**
+ * Environment Flag: Is Auth Disabled
+ * Local source runs do not need login/setup unless explicitly re-enabled.
+ */
+export const IS_AUTH_DISABLED = !IS_PLATFORM && import.meta.env.VITE_DISABLE_AUTH !== 'false';
+
+/**
  * For empty shell instances where no project is provided,
  * we use a default project object to ensure the shell can still function.
  * This prevents errors related to missing project data.

@@ -1,16 +1,19 @@
-import express from 'express';
 import { spawn } from 'child_process';
-import path from 'path';
-import os from 'os';
-import { promises as fs } from 'fs';
 import crypto from 'crypto';
+import { promises as fs } from 'fs';
+import os from 'os';
+import path from 'path';
+
+import express from 'express';
+import { Octokit } from '@octokit/rest';
+
 import { userDb, apiKeysDb, githubTokensDb, projectsDb } from '../modules/database/index.js';
 import { queryClaudeSDK } from '../claude-sdk.js';
 import { spawnCursor } from '../cursor-cli.js';
 import { queryCodex } from '../openai-codex.js';
 import { spawnGemini } from '../gemini-cli.js';
 import { spawnOpenCode } from '../opencode-cli.js';
-import { Octokit } from '@octokit/rest';
+import { spawnAntigravity } from '../antigravity-cli.js';
 import { providerModelsService } from '../modules/providers/services/provider-models.service.js';
 import { IS_PLATFORM } from '../constants/config.js';
 import { normalizeProjectPath } from '../shared/utils.js';
@@ -636,7 +639,7 @@ class ResponseCollector {
  *                          - Source for auto-generated branch names (if createBranch=true and no branchName)
  *                          - Fallback for PR title if no commits are made
  *
- * @param {string} provider - (Optional) AI provider to use. Options: 'claude' | 'cursor' | 'codex' | 'gemini' | 'opencode'
+ * @param {string} provider - (Optional) AI provider to use. Options: 'claude' | 'cursor' | 'codex' | 'gemini' | 'antigravity' | 'opencode'
  *                           Default: 'claude'
  *
  * @param {boolean} stream - (Optional) Enable Server-Sent Events (SSE) streaming for real-time updates.
@@ -754,7 +757,7 @@ class ResponseCollector {
  * Input Validations (400 Bad Request):
  *   - Either githubUrl OR projectPath must be provided (not neither)
  *   - message must be non-empty string
- *   - provider must be 'claude', 'cursor', 'codex', 'gemini', or 'opencode'
+ *   - provider must be 'claude', 'cursor', 'codex', 'gemini', 'antigravity', or 'opencode'
  *   - createBranch/createPR requires githubUrl OR projectPath (not neither)
  *   - branchName must pass Git naming rules (if provided)
  *
@@ -862,8 +865,8 @@ router.post('/', validateExternalApiKey, async (req, res) => {
     return res.status(400).json({ error: 'message is required' });
   }
 
-  if (!['claude', 'cursor', 'codex', 'gemini', 'opencode'].includes(provider)) {
-    return res.status(400).json({ error: 'provider must be "claude", "cursor", "codex", "gemini", or "opencode"' });
+  if (!['claude', 'cursor', 'codex', 'gemini', 'antigravity', 'opencode'].includes(provider)) {
+    return res.status(400).json({ error: 'provider must be "claude", "cursor", "codex", "gemini", "antigravity", or "opencode"' });
   }
 
   // Validate GitHub branch/PR creation requirements
@@ -943,6 +946,7 @@ router.post('/', validateExternalApiKey, async (req, res) => {
 
     const codexModels = (await providerModelsService.getProviderModels('codex')).models;
     const geminiModels = (await providerModelsService.getProviderModels('gemini')).models;
+    const antigravityModels = (await providerModelsService.getProviderModels('antigravity')).models;
     const opencodeModels = (await providerModelsService.getProviderModels('opencode')).models;
 
     // Start the appropriate session
@@ -986,6 +990,16 @@ router.post('/', validateExternalApiKey, async (req, res) => {
         sessionId: sessionId || null,
         model: model || geminiModels.DEFAULT,
         skipPermissions: true // CLI mode bypasses permissions
+      }, writer);
+    } else if (provider === 'antigravity') {
+      console.log('Starting Antigravity CLI session');
+
+      await spawnAntigravity(message.trim(), {
+        projectPath: finalProjectPath,
+        cwd: finalProjectPath,
+        sessionId: sessionId || null,
+        model: model || antigravityModels.DEFAULT,
+        permissionMode: 'bypassPermissions'
       }, writer);
     } else if (provider === 'opencode') {
       console.log('Starting OpenCode CLI session');
@@ -1136,7 +1150,7 @@ router.post('/', validateExternalApiKey, async (req, res) => {
           } else {
             prBody += `Agent task: ${message}`;
           }
-          prBody += '\n\n---\n*This pull request was automatically created by CloudCLI.ai Agent.*';
+          prBody += '\n\n---\n*This pull request was automatically created by MCP Playground Agent.*';
 
           console.log(`📝 PR Title: ${prTitle}`);
 

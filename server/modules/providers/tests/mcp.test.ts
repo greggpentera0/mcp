@@ -257,6 +257,71 @@ test('providerMcpService handles opencode MCP config and capability validation',
 });
 
 /**
+ * This test covers Antigravity MCP support for user/project scopes and
+ * stdio/http/sse transports using the same settings.json shape as the CLI.
+ */
+test('providerMcpService handles antigravity MCP config and capability validation', { concurrency: false }, async () => {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'llm-mcp-antigravity-'));
+  const workspacePath = path.join(tempRoot, 'workspace');
+  await fs.mkdir(workspacePath, { recursive: true });
+
+  const restoreHomeDir = patchHomeDir(tempRoot);
+  try {
+    await providerMcpService.upsertProviderMcpServer('antigravity', {
+      name: 'antigravity-user-stdio',
+      scope: 'user',
+      transport: 'stdio',
+      command: 'node',
+      args: ['server.js'],
+      env: { API_KEY: 'x' },
+      cwd: workspacePath,
+    });
+
+    await providerMcpService.upsertProviderMcpServer('antigravity', {
+      name: 'antigravity-project-sse',
+      scope: 'project',
+      transport: 'sse',
+      url: 'https://antigravity.example.com/sse',
+      headers: { Authorization: 'Bearer token' },
+      workspacePath,
+    });
+
+    const userConfig = await readJson(path.join(tempRoot, '.gemini', 'antigravity-cli', 'settings.json'));
+    const userServers = userConfig.mcpServers as Record<string, unknown>;
+    const userStdio = userServers['antigravity-user-stdio'] as Record<string, unknown>;
+    assert.equal(userStdio.command, 'node');
+    assert.deepEqual(userStdio.args, ['server.js']);
+    assert.deepEqual(userStdio.env, { API_KEY: 'x' });
+
+    const projectConfig = await readJson(path.join(workspacePath, '.gemini', 'antigravity-cli', 'settings.json'));
+    const projectServers = projectConfig.mcpServers as Record<string, unknown>;
+    const projectSse = projectServers['antigravity-project-sse'] as Record<string, unknown>;
+    assert.equal(projectSse.type, 'sse');
+    assert.equal(projectSse.url, 'https://antigravity.example.com/sse');
+
+    const grouped = await providerMcpService.listProviderMcpServers('antigravity', { workspacePath });
+    assert.ok(grouped.user.some((server) => server.name === 'antigravity-user-stdio' && server.transport === 'stdio'));
+    assert.ok(grouped.project.some((server) => server.name === 'antigravity-project-sse' && server.transport === 'sse'));
+
+    await assert.rejects(
+      providerMcpService.upsertProviderMcpServer('antigravity', {
+        name: 'antigravity-local',
+        scope: 'local',
+        transport: 'stdio',
+        command: 'node',
+      }),
+      (error: unknown) =>
+        error instanceof AppError &&
+        error.code === 'MCP_SCOPE_NOT_SUPPORTED' &&
+        error.statusCode === 400,
+    );
+  } finally {
+    restoreHomeDir();
+    await fs.rm(tempRoot, { recursive: true, force: true });
+  }
+});
+
+/**
  * This test covers Gemini/Cursor MCP JSON formats and user/project scope persistence.
  */
 test('providerMcpService handles gemini and cursor MCP JSON config formats', { concurrency: false }, async () => {
@@ -341,7 +406,7 @@ test('providerMcpService global adder writes to all providers and rejects unsupp
       workspacePath,
     });
 
-    assert.equal(globalResult.length, 5);
+    assert.equal(globalResult.length, 6);
     assert.ok(globalResult.every((entry) => entry.created === true));
 
     const claudeProject = await readJson(path.join(workspacePath, '.mcp.json'));
@@ -352,6 +417,9 @@ test('providerMcpService global adder writes to all providers and rejects unsupp
 
     const geminiProject = await readJson(path.join(workspacePath, '.gemini', 'settings.json'));
     assert.ok((geminiProject.mcpServers as Record<string, unknown>)['global-http']);
+
+    const antigravityProject = await readJson(path.join(workspacePath, '.gemini', 'antigravity-cli', 'settings.json'));
+    assert.ok((antigravityProject.mcpServers as Record<string, unknown>)['global-http']);
 
     const opencodeProject = await readJson(path.join(workspacePath, 'opencode.json'));
     assert.ok((opencodeProject.mcp as Record<string, unknown>)['global-http']);
@@ -377,4 +445,3 @@ test('providerMcpService global adder writes to all providers and rejects unsupp
     await fs.rm(tempRoot, { recursive: true, force: true });
   }
 });
-

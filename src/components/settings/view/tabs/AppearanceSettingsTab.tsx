@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { DarkModeToggle } from '../../../../shared/view/ui';
+import { DarkModeToggle, ThemeModeSelector } from '../../../../shared/view/ui';
 import type { CodeEditorSettingsState, ProjectSortOrder } from '../../types/types';
 import LanguageSelector from '../../../../shared/view/ui/LanguageSelector';
 import SettingsCard from '../SettingsCard';
@@ -32,13 +32,24 @@ export default function AppearanceSettingsTab({
 
   return (
     <div className="space-y-8">
-      <SettingsSection title={t('appearanceSettings.darkMode.label')}>
+      <SettingsSection title={t('appearanceSettings.theme.title', 'Theme')}>
         <SettingsCard>
           <SettingsRow
-            label={t('appearanceSettings.darkMode.label')}
-            description={t('appearanceSettings.darkMode.description')}
+            label={t('appearanceSettings.theme.label', 'Theme Preference')}
+            description={t(
+              'appearanceSettings.theme.description',
+              'Use your system appearance, or choose light or dark mode.',
+            )}
+            className="flex-col items-stretch gap-3 sm:flex-row sm:items-center"
           >
-            <DarkModeToggle ariaLabel={t('appearanceSettings.darkMode.label')} />
+            <ThemeModeSelector
+              ariaLabel={t('appearanceSettings.theme.label', 'Theme Preference')}
+              labels={{
+                system: t('appearanceSettings.theme.system', 'System'),
+                light: t('appearanceSettings.theme.light', 'Light'),
+                dark: t('appearanceSettings.theme.dark', 'Dark'),
+              }}
+            />
           </SettingsRow>
         </SettingsCard>
       </SettingsSection>

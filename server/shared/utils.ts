@@ -1067,6 +1067,31 @@ export function getOpenCodeDatabasePath(): string {
 }
 
 // ---------------------------
+//----------------- ANTIGRAVITY SESSION STORAGE UTILITIES ------------
+/**
+ * Resolves Antigravity CLI's user data root.
+ *
+ * Antigravity stores settings, history, and conversation SQLite databases under
+ * `~/.gemini/antigravity-cli`. Provider readers should use these helpers so the
+ * app has one source of truth for its local-first Antigravity paths.
+ */
+export function getAntigravityDataRoot(): string {
+  return path.join(os.homedir(), '.gemini', 'antigravity-cli');
+}
+
+export function getAntigravityConversationsPath(): string {
+  return path.join(getAntigravityDataRoot(), 'conversations');
+}
+
+export function getAntigravityHistoryPath(): string {
+  return path.join(getAntigravityDataRoot(), 'history.jsonl');
+}
+
+export function getAntigravitySettingsPath(): string {
+  return path.join(getAntigravityDataRoot(), 'settings.json');
+}
+
+// ---------------------------
 //----------------- SAFE DIRECTORY NAME UTILITIES ------------
 /**
  * Validates that a user or provider supplied identifier can safely be treated
@@ -1238,4 +1263,3 @@ export async function extractFirstValidJsonlData<T>(
 
   return null;
 }
-

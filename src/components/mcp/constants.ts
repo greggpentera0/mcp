@@ -5,6 +5,7 @@ export const MCP_PROVIDER_NAMES: Record<McpProvider, string> = {
   cursor: 'Cursor',
   codex: 'Codex',
   gemini: 'Gemini',
+  antigravity: 'Antigravity',
   opencode: 'OpenCode',
 };
 
@@ -13,6 +14,7 @@ export const MCP_SUPPORTED_SCOPES: Record<McpProvider, McpScope[]> = {
   cursor: ['user', 'project'],
   codex: ['user', 'project'],
   gemini: ['user', 'project'],
+  antigravity: ['user', 'project'],
   opencode: ['user', 'project'],
 };
 
@@ -21,6 +23,7 @@ export const MCP_SUPPORTED_TRANSPORTS: Record<McpProvider, McpTransport[]> = {
   cursor: ['stdio', 'http'],
   codex: ['stdio', 'http'],
   gemini: ['stdio', 'http', 'sse'],
+  antigravity: ['stdio', 'http', 'sse'],
   opencode: ['stdio', 'http'],
 };
 
@@ -33,6 +36,7 @@ export const MCP_PROVIDER_BUTTON_CLASSES: Record<McpProvider, string> = {
   cursor: 'bg-purple-600 text-white hover:bg-purple-700',
   codex: 'bg-gray-800 text-white hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600',
   gemini: 'bg-blue-600 text-white hover:bg-blue-700',
+  antigravity: 'bg-teal-700 text-white hover:bg-teal-800 dark:bg-teal-600 dark:hover:bg-teal-500',
   opencode: 'bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-700 dark:hover:bg-zinc-600',
 };
 
@@ -41,6 +45,7 @@ export const MCP_SUPPORTS_WORKING_DIRECTORY: Record<McpProvider, boolean> = {
   cursor: false,
   codex: true,
   gemini: true,
+  antigravity: true,
   opencode: false,
 };
 

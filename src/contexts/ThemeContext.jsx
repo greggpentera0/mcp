@@ -1,6 +1,36 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
+const THEME_STORAGE_KEY = 'themeMode';
+const LEGACY_THEME_STORAGE_KEY = 'theme';
+const THEME_MODES = new Set(['system', 'light', 'dark']);
+
+const getSystemPrefersDark = () => (
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-color-scheme: dark)').matches
+);
+
+const readThemeMode = () => {
+  try {
+    const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+    return THEME_MODES.has(savedTheme) ? savedTheme : 'system';
+  } catch {
+    return 'system';
+  }
+};
+
+const updateBrowserThemeMetadata = (isDarkMode) => {
+  const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (statusBarMeta) {
+    statusBarMeta.setAttribute('content', isDarkMode ? 'black-translucent' : 'default');
+  }
+
+  const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute('content', isDarkMode ? '#0c1117' : '#ffffff');
+  }
+};
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
@@ -11,80 +41,62 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Check for saved theme preference or default to system preference
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check localStorage first
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      return savedTheme === 'dark';
-    }
-    
-    // Check system preference
-    if (window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    
-    return false;
-  });
+  const [themeMode, setThemeModeState] = useState(readThemeMode);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(getSystemPrefersDark);
+  const isDarkMode = themeMode === 'system' ? systemPrefersDark : themeMode === 'dark';
 
-  // Update document class and localStorage when theme changes
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      
-      // Update iOS status bar style and theme color for dark mode
-      const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (statusBarMeta) {
-        statusBarMeta.setAttribute('content', 'black-translucent');
-      }
-      
-      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#0c1117'); // Dark background color (hsl(222.2 84% 4.9%))
-      }
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      
-      // Update iOS status bar style and theme color for light mode
-      const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (statusBarMeta) {
-        statusBarMeta.setAttribute('content', 'default');
-      }
-      
-      const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', '#ffffff'); // Light background color
-      }
     }
+    updateBrowserThemeMetadata(isDarkMode);
   }, [isDarkMode]);
 
-  // Listen for system theme changes
   useEffect(() => {
-    if (!window.matchMedia) return;
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+      localStorage.setItem(LEGACY_THEME_STORAGE_KEY, themeMode);
+    } catch {
+      // Local storage can be unavailable in private or embedded browser contexts.
+    }
+  }, [themeMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e) => {
-      // Only update if user hasn't manually set a preference
-      const savedTheme = localStorage.getItem('theme');
-      if (!savedTheme) {
-        setIsDarkMode(e.matches);
-      }
-    };
+    const handleChange = (event) => setSystemPrefersDark(event.matches);
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => !prev);
-  };
+  const setThemeMode = useCallback((nextMode) => {
+    if (!THEME_MODES.has(nextMode)) {
+      return;
+    }
 
-  const value = {
+    setThemeModeState(nextMode);
+  }, []);
+
+  const toggleDarkMode = useCallback(() => {
+    setThemeModeState((currentMode) => {
+      const currentIsDark = currentMode === 'system' ? getSystemPrefersDark() : currentMode === 'dark';
+      return currentIsDark ? 'light' : 'dark';
+    });
+  }, []);
+
+  const value = useMemo(() => ({
     isDarkMode,
+    themeMode,
+    effectiveTheme: isDarkMode ? 'dark' : 'light',
+    setThemeMode,
     toggleDarkMode,
-  };
+  }), [isDarkMode, setThemeMode, themeMode, toggleDarkMode]);
 
   return (
     <ThemeContext.Provider value={value}>

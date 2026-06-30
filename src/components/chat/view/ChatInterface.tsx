@@ -16,6 +16,14 @@ import ChatMessagesPane from './subcomponents/ChatMessagesPane';
 import ChatComposer from './subcomponents/ChatComposer';
 import CommandResultModal from './subcomponents/CommandResultModal';
 
+const getProviderLabel = (provider: Provider, t: (key: string, options?: Record<string, unknown>) => string) => {
+  if (provider === 'cursor') return t('messageTypes.cursor');
+  if (provider === 'codex') return t('messageTypes.codex');
+  if (provider === 'gemini') return t('messageTypes.gemini');
+  if (provider === 'antigravity') return t('messageTypes.antigravity', { defaultValue: 'Antigravity' });
+  if (provider === 'opencode') return t('messageTypes.opencode', { defaultValue: 'OpenCode' });
+  return t('messageTypes.claude');
+};
 
 function ChatInterface({
   selectedProject,
@@ -73,6 +81,8 @@ function ChatInterface({
     setCodexModel,
     geminiModel,
     setGeminiModel,
+    antigravityModel,
+    setAntigravityModel,
     opencodeModel,
     setOpenCodeModel,
     permissionMode,
@@ -87,7 +97,6 @@ function ChatInterface({
     selectProviderModel,
   } = useChatProviderState({
     selectedSession,
-    selectedProject,
   });
 
   const {
@@ -200,6 +209,7 @@ function ChatInterface({
     claudeModel,
     codexModel,
     geminiModel,
+    antigravityModel,
     opencodeModel,
     isLoading: isProcessing,
     canAbortSession,
@@ -284,16 +294,7 @@ function ChatInterface({
   }), [pendingPermissionRequests, handlePermissionDecision]);
 
   if (!selectedProject) {
-    const selectedProviderLabel =
-      provider === 'cursor'
-        ? t('messageTypes.cursor')
-        : provider === 'codex'
-          ? t('messageTypes.codex')
-          : provider === 'gemini'
-            ? t('messageTypes.gemini')
-            : provider === 'opencode'
-              ? t('messageTypes.opencode', { defaultValue: 'OpenCode' })
-            : t('messageTypes.claude');
+    const selectedProviderLabel = getProviderLabel(provider as Provider, t);
 
     return (
       <div className="flex h-full items-center justify-center">
@@ -332,6 +333,8 @@ function ChatInterface({
           setCodexModel={setCodexModel}
           geminiModel={geminiModel}
           setGeminiModel={setGeminiModel}
+          antigravityModel={antigravityModel}
+          setAntigravityModel={setAntigravityModel}
           opencodeModel={opencodeModel}
           setOpenCodeModel={setOpenCodeModel}
           providerModelCatalog={providerModelCatalog}
@@ -416,16 +419,7 @@ function ChatInterface({
           onTextareaInput={handleTextareaInput}
           onInputFocusChange={handleInputFocusChange}
           placeholder={t('input.placeholder', {
-            provider:
-              provider === 'cursor'
-                ? t('messageTypes.cursor')
-                : provider === 'codex'
-                  ? t('messageTypes.codex')
-                  : provider === 'gemini'
-                    ? t('messageTypes.gemini')
-                    : provider === 'opencode'
-                      ? t('messageTypes.opencode', { defaultValue: 'OpenCode' })
-                    : t('messageTypes.claude'),
+            provider: getProviderLabel(provider as Provider, t),
           })}
           isTextareaExpanded={isTextareaExpanded}
           sendByCtrlEnter={sendByCtrlEnter}

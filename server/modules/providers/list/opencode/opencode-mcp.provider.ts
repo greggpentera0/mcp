@@ -1,7 +1,11 @@
-import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import {
+  readOpenCodeConfigFile,
+  writeOpenCodeConfigFile,
+} from '@/modules/providers/list/opencode/opencode-config.js';
 import { McpProvider } from '@/modules/providers/shared/mcp/mcp.provider.js';
 import type { McpScope, ProviderMcpServer, UpsertProviderMcpServerInput } from '@/shared/types.js';
 import {
@@ -24,85 +28,6 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   } catch {
     return false;
   }
-};
-
-/**
- * Removes JSONC comments without touching comment-like text inside strings.
- */
-const stripJsonComments = (content: string): string => {
-  let output = '';
-  let inString = false;
-  let quote = '';
-  let escaped = false;
-
-  for (let index = 0; index < content.length; index += 1) {
-    const char = content[index];
-    const next = content[index + 1];
-
-    if (inString) {
-      output += char;
-      if (escaped) {
-        escaped = false;
-      } else if (char === '\\') {
-        escaped = true;
-      } else if (char === quote) {
-        inString = false;
-        quote = '';
-      }
-      continue;
-    }
-
-    if (char === '"' || char === '\'') {
-      inString = true;
-      quote = char;
-      output += char;
-      continue;
-    }
-
-    if (char === '/' && next === '/') {
-      while (index < content.length && content[index] !== '\n') {
-        index += 1;
-      }
-      output += '\n';
-      continue;
-    }
-
-    if (char === '/' && next === '*') {
-      index += 2;
-      while (index < content.length && !(content[index] === '*' && content[index + 1] === '/')) {
-        index += 1;
-      }
-      index += 1;
-      continue;
-    }
-
-    output += char;
-  }
-
-  return output;
-};
-
-const stripTrailingCommas = (content: string): string =>
-  content.replace(/,\s*([}\]])/g, '$1');
-
-const readOpenCodeConfig = async (filePath: string): Promise<Record<string, unknown>> => {
-  try {
-    const content = await readFile(filePath, 'utf8');
-    const parsed = JSON.parse(stripTrailingCommas(stripJsonComments(content))) as unknown;
-    return readObjectRecord(parsed) ?? {};
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === 'ENOENT') {
-      return {};
-    }
-
-    throw error;
-  }
-};
-
-const writeOpenCodeConfig = async (filePath: string, data: Record<string, unknown>): Promise<void> => {
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
 };
 
 const resolveOpenCodeConfigPath = async (scope: McpScope, workspacePath: string): Promise<OpenCodeConfigPath> => {
@@ -130,7 +55,7 @@ export class OpenCodeMcpProvider extends McpProvider {
 
   protected async readScopedServers(scope: McpScope, workspacePath: string): Promise<Record<string, unknown>> {
     const { filePath } = await resolveOpenCodeConfigPath(scope, workspacePath);
-    const config = await readOpenCodeConfig(filePath);
+    const config = await readOpenCodeConfigFile(filePath);
     return readObjectRecord(config.mcp) ?? {};
   }
 
@@ -140,9 +65,9 @@ export class OpenCodeMcpProvider extends McpProvider {
     servers: Record<string, unknown>,
   ): Promise<void> {
     const { filePath } = await resolveOpenCodeConfigPath(scope, workspacePath);
-    const config = await readOpenCodeConfig(filePath);
+    const config = await readOpenCodeConfigFile(filePath);
     config.mcp = servers;
-    await writeOpenCodeConfig(filePath, config);
+    await writeOpenCodeConfigFile(filePath, config);
   }
 
   protected buildServerConfig(input: UpsertProviderMcpServerInput): Record<string, unknown> {

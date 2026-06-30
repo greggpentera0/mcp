@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { IS_PLATFORM } from '../../../constants/config';
+import { IS_AUTH_DISABLED, IS_PLATFORM } from '../../../constants/config';
 import { api } from '../../../utils/api';
 import { AUTH_ERROR_MESSAGES, AUTH_TOKEN_STORAGE_KEY } from '../constants';
 import type {
@@ -116,6 +116,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [checkOnboardingStatus, clearSession, token]);
 
   useEffect(() => {
+    if (IS_AUTH_DISABLED) {
+      setUser({ username: 'local-user' });
+      setNeedsSetup(false);
+      setHasCompletedOnboarding(true);
+      clearStoredToken();
+      setToken(null);
+      setIsLoading(false);
+      return;
+    }
+
     if (IS_PLATFORM) {
       setUser({ username: 'platform-user' });
       setNeedsSetup(false);

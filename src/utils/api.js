@@ -1,4 +1,4 @@
-import { IS_PLATFORM } from "../constants/config";
+import { IS_AUTH_DISABLED, IS_PLATFORM } from "../constants/config";
 
 // Utility function for authenticated API calls
 export const authenticatedFetch = (url, options = {}) => {
@@ -11,7 +11,7 @@ export const authenticatedFetch = (url, options = {}) => {
     defaultHeaders['Content-Type'] = 'application/json';
   }
 
-  if (!IS_PLATFORM && token) {
+  if (!IS_PLATFORM && !IS_AUTH_DISABLED && token) {
     defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
@@ -23,7 +23,7 @@ export const authenticatedFetch = (url, options = {}) => {
     },
   }).then((response) => {
     const refreshedToken = response.headers.get('X-Refreshed-Token');
-    if (refreshedToken) {
+    if (!IS_AUTH_DISABLED && refreshedToken) {
       localStorage.setItem('auth-token', refreshedToken);
     }
     return response;
@@ -121,7 +121,7 @@ export const api = {
   searchConversationsUrl: (query, limit = 50) => {
     const token = localStorage.getItem('auth-token');
     const params = new URLSearchParams({ q: query, limit: String(limit) });
-    if (token) params.set('token', token);
+    if (!IS_AUTH_DISABLED && token) params.set('token', token);
     return `/api/providers/search/sessions?${params.toString()}`;
   },
   createProject: (projectData) =>

@@ -66,6 +66,15 @@ const PROVIDER_CAPABILITIES: Record<LLMProvider, ProviderCapabilities> = {
     supportsPermissionRequests: false,
     supportsTokenUsage: true,
   },
+  antigravity: {
+    provider: 'antigravity',
+    permissionModes: ['default', 'bypassPermissions'],
+    defaultPermissionMode: 'default',
+    supportsImages: false,
+    supportsAbort: true,
+    supportsPermissionRequests: false,
+    supportsTokenUsage: true,
+  },
   opencode: {
     provider: 'opencode',
     permissionModes: ['default'],

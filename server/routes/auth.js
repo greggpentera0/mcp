@@ -2,15 +2,45 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import { userDb } from '../modules/database/index.js';
 import { getConnection } from '../modules/database/connection.js';
-import { generateToken, authenticateToken } from '../middleware/auth.js';
+import {
+  generateToken,
+  authenticateToken,
+  getOrCreateLocalAuthUser,
+  isLocalAuthDisabledUser,
+} from '../middleware/auth.js';
+import { IS_AUTH_DISABLED } from '../constants/config.js';
 
 const router = express.Router();
 const db = getConnection();
 
+const getActiveUsersForSetup = () => db
+  .prepare('SELECT id, username, password_hash FROM users WHERE is_active = 1')
+  .all();
+
+const getOnlyAuthDisabledUser = () => {
+  const users = getActiveUsersForSetup();
+  return users.length === 1 && isLocalAuthDisabledUser(users[0]) ? users[0] : null;
+};
+
+const hasConfiguredAuthUser = () => getActiveUsersForSetup().some(
+  (user) => !isLocalAuthDisabledUser(user)
+);
+
 // Check auth status and setup requirements
 router.get('/status', async (req, res) => {
   try {
-    const hasUsers = await userDb.hasUsers();
+    if (IS_AUTH_DISABLED) {
+      const user = getOrCreateLocalAuthUser();
+      res.json({
+        needsSetup: false,
+        isAuthenticated: true,
+        authDisabled: true,
+        user: { id: user.id, username: user.username }
+      });
+      return;
+    }
+
+    const hasUsers = hasConfiguredAuthUser();
     res.json({ 
       needsSetup: !hasUsers,
       isAuthenticated: false // Will be overridden by frontend if token exists
@@ -38,8 +68,8 @@ router.post('/register', async (req, res) => {
     // Use a transaction to prevent race conditions
     db.prepare('BEGIN').run();
     try {
-      // Check if users already exist (only allow one user)
-      const hasUsers = userDb.hasUsers();
+      // Check if configured users already exist (only allow one user)
+      const hasUsers = hasConfiguredAuthUser();
       if (hasUsers) {
         db.prepare('ROLLBACK').run();
         return res.status(403).json({ error: 'User already exists. This is a single-user system.' });
@@ -49,8 +79,16 @@ router.post('/register', async (req, res) => {
       const saltRounds = 12;
       const passwordHash = await bcrypt.hash(password, saltRounds);
       
-      // Create user
-      const user = userDb.createUser(username, passwordHash);
+      const localAuthUser = getOnlyAuthDisabledUser();
+      const user = localAuthUser
+        ? { id: localAuthUser.id, username }
+        : userDb.createUser(username, passwordHash);
+
+      if (localAuthUser) {
+        db.prepare(
+          'UPDATE users SET username = ?, password_hash = ?, has_completed_onboarding = 0 WHERE id = ?'
+        ).run(username, passwordHash, localAuthUser.id);
+      }
       
       // Generate token
       const token = generateToken(user);
@@ -92,7 +130,7 @@ router.post('/login', async (req, res) => {
     
     // Get user from database
     const user = userDb.getUserByUsername(username);
-    if (!user) {
+    if (!user || isLocalAuthDisabledUser(user)) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
     

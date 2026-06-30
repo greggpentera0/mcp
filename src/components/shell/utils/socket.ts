@@ -1,10 +1,10 @@
-import { IS_PLATFORM } from '../../../constants/config';
+import { IS_AUTH_DISABLED, IS_PLATFORM } from '../../../constants/config';
 import type { ShellIncomingMessage, ShellOutgoingMessage } from '../types/types';
 
 export function getShellWebSocketUrl(): string | null {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 
-  if (IS_PLATFORM) {
+  if (IS_PLATFORM || IS_AUTH_DISABLED) {
     return `${protocol}//${window.location.host}/shell`;
   }
 

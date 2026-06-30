@@ -1,9 +1,14 @@
 import { spawn } from 'child_process';
+
 import crossSpawn from 'cross-spawn';
-import { notifyRunFailed, notifyRunStopped } from './services/notification-orchestrator.js';
-import { sessionsService } from './modules/providers/services/sessions.service.js';
-import { providerAuthService } from './modules/providers/services/provider-auth.service.js';
+
 import { providerModelsService } from './modules/providers/services/provider-models.service.js';
+import { sessionsService } from './modules/providers/services/sessions.service.js';
+import { notifyRunFailed, notifyRunStopped } from './services/notification-orchestrator.js';
+import {
+  buildCursorAgentNotFoundMessage,
+  resolveCursorAgentExecutablePath,
+} from './shared/cursor-cli-path.js';
 import { createCompleteMessage, createNormalizedMessage } from './shared/utils.js';
 
 // Use cross-spawn on Windows for better command execution
@@ -126,11 +131,13 @@ async function spawnCursor(command, options = {}, ws) {
         console.log('Retrying Cursor CLI with --trust after workspace trust prompt');
       }
 
-      console.log('Spawning Cursor CLI:', 'cursor-agent', args.join(' '));
+      const cursorAgentPath = resolveCursorAgentExecutablePath();
+
+      console.log('Spawning Cursor CLI:', cursorAgentPath, args.join(' '));
       console.log('Working directory:', workingDir);
       console.log('Session info - Input sessionId:', sessionId, 'Resume:', resume);
 
-      const cursorProcess = spawnFunction('cursor-agent', args, {
+      const cursorProcess = spawnFunction(cursorAgentPath, args, {
         cwd: workingDir,
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env } // Inherit all environment variables
@@ -292,27 +299,25 @@ async function spawnCursor(command, options = {}, ws) {
       });
 
       // Handle process errors
-      cursorProcess.on('error', async (error) => {
+      cursorProcess.on('error', (error) => {
         console.error('Cursor CLI process error:', error);
 
         // Clean up process reference on error
         const finalSessionId = capturedSessionId || sessionId || processKey;
         activeCursorProcesses.delete(finalSessionId);
 
-        // Check if Cursor CLI is installed for a clearer error message
-        const installed = await providerAuthService.isProviderInstalled('cursor');
-        const errorContent = !installed
-          ? 'Cursor CLI is not installed. Please install it from https://cursor.com'
-          : error.message;
+        const errorContent = error?.code === 'ENOENT'
+          ? buildCursorAgentNotFoundMessage(cursorAgentPath)
+          : error.message || 'Cursor CLI failed to start';
 
         ws.send(createNormalizedMessage({ kind: 'error', content: errorContent, sessionId: capturedSessionId || sessionId || null, provider: 'cursor' }));
         if (!completeSent && !cursorProcess.aborted) {
           completeSent = true;
           ws.send(createCompleteMessage({ provider: 'cursor', sessionId: capturedSessionId || sessionId || null, exitCode: 1 }));
         }
-        notifyTerminalState({ error });
+        notifyTerminalState({ error: errorContent });
 
-        settleOnce(() => reject(error));
+        settleOnce(() => reject(new Error(errorContent)));
       });
 
       // Close stdin since Cursor doesn't need interactive input

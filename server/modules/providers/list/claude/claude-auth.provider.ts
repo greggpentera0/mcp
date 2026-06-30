@@ -16,9 +16,48 @@ type ClaudeCredentialsStatus = {
   error?: string;
 };
 
+const MISSING_CREDENTIALS_ERROR = 'Claude CLI is not authenticated. Run claude /login or configure ANTHROPIC_API_KEY.';
+
 const hasErrorCode = (error: unknown, code: string): boolean => (
   error instanceof Error && 'code' in error && error.code === code
 );
+
+export const parseClaudeAuthStatusStdout = (stdout: string): ClaudeCredentialsStatus | null => {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(stdout);
+  } catch {
+    return null;
+  }
+
+  const status = readObjectRecord(payload);
+  if (!status || typeof status.loggedIn !== 'boolean') {
+    return null;
+  }
+
+  if (!status.loggedIn) {
+    return {
+      authenticated: false,
+      email: null,
+      method: null,
+      error: MISSING_CREDENTIALS_ERROR,
+    };
+  }
+
+  const authMethod = readOptionalString(status.authMethod)
+    ?? readOptionalString(status.apiProvider)
+    ?? 'claude_auth_status';
+  const email = readOptionalString(status.email)
+    ?? readOptionalString(status.orgName)
+    ?? readOptionalString(status.username)
+    ?? 'Authenticated';
+
+  return {
+    authenticated: true,
+    email,
+    method: authMethod,
+  };
+};
 
 export class ClaudeProviderAuth implements IProviderAuth {
   /**
@@ -78,11 +117,29 @@ export class ClaudeProviderAuth implements IProviderAuth {
   }
 
   /**
+   * Claude Code 2.x stores first-party login state outside `.claude/.credentials.json`.
+   * The CLI's JSON status command is the stable way to read that state without
+   * duplicating its keychain and account-store internals.
+   */
+  private checkCliAuthStatus(): ClaudeCredentialsStatus | null {
+    const cliPath = resolveClaudeCodeExecutablePath(process.env.CLAUDE_CLI_PATH);
+    const result = spawn.sync(cliPath, ['auth', 'status', '--json'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000,
+    });
+
+    if (result.error || result.status !== 0 || typeof result.stdout !== 'string') {
+      return null;
+    }
+
+    return parseClaudeAuthStatusStdout(result.stdout);
+  }
+
+  /**
    * Checks Claude credentials in the same priority order used by Claude Code.
    */
   private async checkCredentials(): Promise<ClaudeCredentialsStatus> {
-    const missingCredentialsError = 'Claude CLI is not authenticated. Run claude /login or configure ANTHROPIC_API_KEY.';
-
     if (process.env.ANTHROPIC_AUTH_TOKEN?.trim()) {
       return { authenticated: true, email: 'Auth Token', method: 'api_key' };
     }
@@ -98,6 +155,11 @@ export class ClaudeProviderAuth implements IProviderAuth {
 
     if (readOptionalString(settingsEnv.ANTHROPIC_AUTH_TOKEN)) {
       return { authenticated: true, email: 'Configured via settings.json', method: 'api_key' };
+    }
+
+    const cliStatus = this.checkCliAuthStatus();
+    if (cliStatus) {
+      return cliStatus;
     }
 
     try {
@@ -130,13 +192,13 @@ export class ClaudeProviderAuth implements IProviderAuth {
         authenticated: false,
         email: null,
         method: null,
-        error: missingCredentialsError,
+        error: MISSING_CREDENTIALS_ERROR,
       };
     } catch (error) {
       let errorMessage = 'Unable to read Claude credentials. Run claude /login again.';
 
       if (hasErrorCode(error, 'ENOENT')) {
-        errorMessage = missingCredentialsError;
+        errorMessage = MISSING_CREDENTIALS_ERROR;
       } else if (error instanceof SyntaxError) {
         errorMessage = 'Claude credentials are unreadable. Run claude /login again.';
       }

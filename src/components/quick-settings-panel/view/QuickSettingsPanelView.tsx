@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useDeviceSettings } from '../../../hooks/useDeviceSettings';
 import { useUiPreferences } from '../../../hooks/useUiPreferences';
-import { useTheme } from '../../../contexts/ThemeContext';
 import { useQuickSettingsDrag } from '../hooks/useQuickSettingsDrag';
 import type { PreferenceToggleKey, QuickSettingsPreferences } from '../types';
 import QuickSettingsContent from './QuickSettingsContent';
@@ -12,7 +11,6 @@ import QuickSettingsPanelHeader from './QuickSettingsPanelHeader';
 export default function QuickSettingsPanelView() {
   const [isOpen, setIsOpen] = useState(false);
   const { isMobile } = useDeviceSettings({ trackPWA: false });
-  const { isDarkMode } = useTheme();
   const { preferences, setPreference } = useUiPreferences();
   const {
     isDragging,
@@ -74,7 +72,6 @@ export default function QuickSettingsPanelView() {
         <div className="flex h-full flex-col">
           <QuickSettingsPanelHeader />
           <QuickSettingsContent
-            isDarkMode={isDarkMode}
             preferences={quickSettingsPreferences}
             onPreferenceChange={handlePreferenceChange}
           />

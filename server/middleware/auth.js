@@ -1,9 +1,54 @@
 import jwt from 'jsonwebtoken';
 import { userDb, appConfigDb } from '../modules/database/index.js';
-import { IS_PLATFORM } from '../constants/config.js';
+import { IS_AUTH_DISABLED, IS_PLATFORM } from '../constants/config.js';
 
 // Use env var if set, otherwise auto-generate a unique secret per installation
 const JWT_SECRET = process.env.JWT_SECRET || appConfigDb.getOrCreateJwtSecret();
+const LOCAL_AUTH_DISABLED_USERNAME = 'local-user';
+const LOCAL_AUTH_DISABLED_PASSWORD_HASH = '__cloudcli_auth_disabled_local_user__';
+
+const isLocalAuthDisabledUser = (user) => (
+  Boolean(user)
+  && user.username === LOCAL_AUTH_DISABLED_USERNAME
+  && user.password_hash === LOCAL_AUTH_DISABLED_PASSWORD_HASH
+);
+
+const normalizeAuthenticatedUser = (user) => ({
+  id: user.id,
+  userId: user.id,
+  username: user.username,
+  created_at: user.created_at,
+  last_login: user.last_login,
+});
+
+const getOrCreateLocalAuthUser = () => {
+  const existingUser = userDb.getFirstUser();
+  if (existingUser) {
+    return existingUser;
+  }
+
+  try {
+    const createdUser = userDb.createUser(
+      LOCAL_AUTH_DISABLED_USERNAME,
+      LOCAL_AUTH_DISABLED_PASSWORD_HASH
+    );
+    const userId = Number(createdUser.id);
+    userDb.completeOnboarding(userId);
+    return userDb.getUserById(userId) || {
+      id: userId,
+      username: createdUser.username,
+      created_at: new Date().toISOString(),
+      last_login: null,
+    };
+  } catch (error) {
+    const localUser = userDb.getFirstUser();
+    if (localUser) {
+      return localUser;
+    }
+
+    throw error;
+  }
+};
 
 // Optional API key middleware
 const validateApiKey = (req, res, next) => {
@@ -21,6 +66,16 @@ const validateApiKey = (req, res, next) => {
 
 // JWT authentication middleware
 const authenticateToken = async (req, res, next) => {
+  if (IS_AUTH_DISABLED) {
+    try {
+      req.user = getOrCreateLocalAuthUser();
+      return next();
+    } catch (error) {
+      console.error('Auth-disabled local user error:', error);
+      return res.status(500).json({ error: 'Failed to initialize local user' });
+    }
+  }
+
   // Platform mode:  use single database user
   if (IS_PLATFORM) {
     try {
@@ -90,12 +145,21 @@ const generateToken = (user) => {
 
 // WebSocket authentication function
 const authenticateWebSocket = (token) => {
+  if (IS_AUTH_DISABLED) {
+    try {
+      return normalizeAuthenticatedUser(getOrCreateLocalAuthUser());
+    } catch (error) {
+      console.error('Auth-disabled local WebSocket error:', error);
+      return null;
+    }
+  }
+
   // Platform mode: bypass token validation, return first user
   if (IS_PLATFORM) {
     try {
       const user = userDb.getFirstUser();
       if (user) {
-        return { id: user.id, userId: user.id, username: user.username };
+        return normalizeAuthenticatedUser(user);
       }
       return null;
     } catch (error) {
@@ -128,5 +192,9 @@ export {
   authenticateToken,
   generateToken,
   authenticateWebSocket,
+  getOrCreateLocalAuthUser,
+  isLocalAuthDisabledUser,
+  LOCAL_AUTH_DISABLED_PASSWORD_HASH,
+  LOCAL_AUTH_DISABLED_USERNAME,
   JWT_SECRET
 };

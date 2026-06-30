@@ -1,9 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- Background fills entire canvas -->
-  <rect x="0" y="0" width="64" height="64" fill="hsl(240 5.9% 10%)"/>
-  
-  <!-- MessageSquare icon - exact same as sidebar -->
-  <g transform="translate(32, 32) scale(1.333) translate(-12, -12)" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="mcpLogoGradient" x1="42" y1="34" x2="218" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#0D4FE8"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="54" fill="url(#mcpLogoGradient)"/>
+  <g stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M73 100L128 68L183 100L128 132L73 100Z"/>
+    <path d="M73 100V157L128 189L183 157V100"/>
+    <path d="M128 132V189"/>
+    <path d="M92 123L79 136L92 149"/>
+    <path d="M111 119L102 153"/>
+    <path d="M119 123L132 136L119 149"/>
+    <path d="M151 120V155L178 137L151 120Z"/>
   </g>
 </svg>

@@ -1,6 +1,8 @@
-import { ExternalLink, Star, MessageSquare } from 'lucide-react';
+import { ExternalLink, Star } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
 import { IS_PLATFORM } from '../../../../../../constants/config';
+import { AppLogo } from '../../../../../../shared/view/ui';
 import type { ReleaseInfo } from '../../../../../../types/sharedTypes';
 
 const GITHUB_REPO_URL = 'https://github.com/siteboon/claudecodeui';
@@ -42,16 +44,14 @@ export default function VersionInfoSection({
 
   return (
     <div className="border-t border-border/50 pt-6">
-      {/* About CloudCLI */}
+      {/* About MCP Playground */}
       <div className="space-y-4">
         {/* Logo + name + version */}
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary/90 shadow-sm">
-            <MessageSquare className="h-4.5 w-4.5 text-primary-foreground" />
-          </div>
+          <AppLogo className="h-9 w-9" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">CloudCLI</span>
+              <span className="text-sm font-semibold text-foreground">MCP Playground</span>
               <a
                 href={releasesUrl}
                 target="_blank"
@@ -133,7 +133,7 @@ export default function VersionInfoSection({
         {/* Hosted CTA (OSS mode only) */}
         {!IS_PLATFORM && (
           <div className="rounded-xl border border-primary/10 bg-primary/5 p-4">
-            <h4 className="text-sm font-medium text-foreground">Try CloudCLI Hosted</h4>
+            <h4 className="text-sm font-medium text-foreground">Try MCP Playground Hosted</h4>
             <p className="mt-1 text-xs text-muted-foreground">
               Team collaboration, shared MCP configs, settings sync across environments, and managed infrastructure.
             </p>

@@ -4,6 +4,10 @@ import fsSync from 'node:fs';
 import crossSpawn from 'cross-spawn';
 import Database from 'better-sqlite3';
 
+import {
+  buildOpenCodeNotFoundMessage,
+  getOpenCodeExecutable,
+} from './modules/providers/list/opencode/opencode-config.js';
 import { sessionsService } from './modules/providers/services/sessions.service.js';
 import { providerAuthService } from './modules/providers/services/provider-auth.service.js';
 import { providerModelsService } from './modules/providers/services/provider-models.service.js';
@@ -208,7 +212,8 @@ async function spawnOpenCode(command, options = {}, ws) {
         args.push(command.trim());
       }
 
-      opencodeProcess = spawnFunction('opencode', args, {
+      const openCodeExecutable = getOpenCodeExecutable();
+      opencodeProcess = spawnFunction(openCodeExecutable, args, {
         cwd: workingDir,
         stdio: ['pipe', 'pipe', 'pipe'],
         env: { ...process.env },
@@ -281,7 +286,7 @@ async function spawnOpenCode(command, options = {}, ws) {
           if (!installed) {
             ws.send(createNormalizedMessage({
               kind: 'error',
-              content: 'OpenCode CLI is not installed. Install it from https://opencode.ai/docs/',
+              content: buildOpenCodeNotFoundMessage(openCodeExecutable),
               sessionId: finalSessionId,
               provider: 'opencode',
             }));
@@ -297,10 +302,17 @@ async function spawnOpenCode(command, options = {}, ws) {
         activeOpenCodeProcesses.delete(finalSessionId);
         activeOpenCodeProcesses.delete(processKey);
 
-        const installed = await providerAuthService.isProviderInstalled('opencode');
-        const errorContent = !installed
-          ? 'OpenCode CLI is not installed. Install it from https://opencode.ai/docs/'
+        const errorCode = error && typeof error === 'object' ? error.code : undefined;
+        let errorContent = errorCode === 'ENOENT'
+          ? buildOpenCodeNotFoundMessage(openCodeExecutable)
           : error.message;
+
+        if (errorCode !== 'ENOENT') {
+          const installed = await providerAuthService.isProviderInstalled('opencode');
+          errorContent = !installed
+            ? buildOpenCodeNotFoundMessage(openCodeExecutable)
+            : error.message;
+        }
 
         ws.send(createNormalizedMessage({
           kind: 'error',

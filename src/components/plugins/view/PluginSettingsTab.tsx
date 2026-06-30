@@ -82,7 +82,7 @@ const UNOFFICIAL_PLUGIN_RECOMMENDATIONS: PluginRecommendation[] = [
   },
   {
     id: 'prism',
-    translationKey: 'prismCloudCLI',
+    translationKey: 'prismMcpPlayground',
     repoUrl: PRISM_CLOUDCLI_PLUGIN_URL,
     installedNames: ['prism'],
     icon: Activity,

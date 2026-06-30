@@ -37,6 +37,8 @@ interface ChatMessagesPaneProps {
   setCodexModel: (model: string) => void;
   geminiModel: string;
   setGeminiModel: (model: string) => void;
+  antigravityModel: string;
+  setAntigravityModel: (model: string) => void;
   opencodeModel: string;
   setOpenCodeModel: (model: string) => void;
   providerModelCatalog: Partial<Record<LLMProvider, ProviderModelsDefinition>>;
@@ -87,6 +89,8 @@ function ChatMessagesPane({
   setCodexModel,
   geminiModel,
   setGeminiModel,
+  antigravityModel,
+  setAntigravityModel,
   opencodeModel,
   setOpenCodeModel,
   providerModelCatalog,
@@ -175,6 +179,8 @@ function ChatMessagesPane({
           setCodexModel={setCodexModel}
           geminiModel={geminiModel}
           setGeminiModel={setGeminiModel}
+          antigravityModel={antigravityModel}
+          setAntigravityModel={setAntigravityModel}
           opencodeModel={opencodeModel}
           setOpenCodeModel={setOpenCodeModel}
           providerModelCatalog={providerModelCatalog}

@@ -14,6 +14,8 @@ const PROVIDER_LABELS = {
   cursor: 'Cursor',
   codex: 'Codex',
   gemini: 'Gemini',
+  antigravity: 'Antigravity',
+  opencode: 'OpenCode',
   system: 'System'
 };
 
@@ -165,7 +167,7 @@ function buildNotificationPayload(event) {
   const message = CODE_MAP[normalizedEvent.code] || 'You have a new notification';
 
   return {
-    title: sessionName || 'CloudCLI',
+    title: sessionName || 'MCP Playground',
     body: `${providerLabel}: ${message}`,
     data: {
       sessionId: normalizedEvent.sessionId || null,

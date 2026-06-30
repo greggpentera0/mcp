@@ -3,6 +3,10 @@ import { spawn } from 'node:child_process';
 import Database from 'better-sqlite3';
 import crossSpawn from 'cross-spawn';
 
+import {
+  getOpenCodeExecutable,
+  readOpenCodeConfigModels,
+} from '@/modules/providers/list/opencode/opencode-config.js';
 import type { IProviderModels } from '@/shared/interfaces.js';
 import type {
   ProviderChangeActiveModelInput,
@@ -187,6 +191,37 @@ export const buildOpenCodeDefinitionFromIds = (ids: string[]): ProviderModelsDef
   };
 };
 
+export const mergeOpenCodeModels = (
+  configModels: Awaited<ReturnType<typeof readOpenCodeConfigModels>>,
+  cliModels: ProviderModelsDefinition,
+): ProviderModelsDefinition => {
+  if (!configModels || configModels.models.length === 0) {
+    return cliModels;
+  }
+
+  const merged = new Map<string, ProviderModelOption>();
+  for (const option of configModels.models) {
+    merged.set(option.value, option);
+  }
+
+  for (const option of cliModels.OPTIONS) {
+    if (!merged.has(option.value)) {
+      merged.set(option.value, option);
+    }
+  }
+
+  const options = [...merged.values()];
+  const preferredDefault = configModels.defaultModel;
+  return {
+    OPTIONS: options,
+    DEFAULT: preferredDefault && merged.has(preferredDefault)
+      ? preferredDefault
+      : cliModels.DEFAULT && merged.has(cliModels.DEFAULT)
+        ? cliModels.DEFAULT
+        : options[0]?.value ?? OPENCODE_FALLBACK_MODELS.DEFAULT,
+  };
+};
+
 const parseOpenCodeSessionModelValue = (rawModel: unknown): string | null => {
   if (typeof rawModel === 'string') {
     const trimmed = rawModel.trim();
@@ -214,7 +249,7 @@ const parseOpenCodeSessionModelValue = (rawModel: unknown): string | null => {
 };
 
 const runOpenCodeModelsCommand = (): Promise<string> => new Promise((resolve, reject) => {
-  const openCodeProcess = spawnFunction('opencode', ['models'], {
+  const openCodeProcess = spawnFunction(getOpenCodeExecutable(), ['models'], {
     cwd: process.cwd(),
     env: { ...process.env },
   });
@@ -271,16 +306,18 @@ const runOpenCodeModelsCommand = (): Promise<string> => new Promise((resolve, re
 
 export class OpenCodeProviderModels implements IProviderModels {
   async getSupportedModels(): Promise<ProviderModelsDefinition> {
+    const configModels = await readOpenCodeConfigModels({ validateLocalModels: true }).catch(() => null);
+
     try {
       const stdout = await runOpenCodeModelsCommand();
       const ids = parseOpenCodeModelsStdout(stdout);
       if (ids.length === 0) {
-        return OPENCODE_FALLBACK_MODELS;
+        return mergeOpenCodeModels(configModels, OPENCODE_FALLBACK_MODELS);
       }
 
-      return buildOpenCodeDefinitionFromIds(ids);
+      return mergeOpenCodeModels(configModels, buildOpenCodeDefinitionFromIds(ids));
     } catch {
-      return OPENCODE_FALLBACK_MODELS;
+      return mergeOpenCodeModels(configModels, OPENCODE_FALLBACK_MODELS);
     }
   }
 

@@ -1,49 +1,43 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// Icon sizes needed
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
-// SVG template function
 function createIconSVG(size) {
-  const cornerRadius = Math.round(size * 0.25); // 25% corner radius
-  const strokeWidth = Math.max(2, Math.round(size * 0.06)); // Scale stroke width
-  
-  // MessageSquare path scaled to size
-  const padding = Math.round(size * 0.25);
-  const iconSize = size - (padding * 2);
-  const startX = padding;
-  const startY = Math.round(padding * 0.7);
-  const endX = startX + iconSize;
-  const endY = startY + Math.round(iconSize * 0.6);
-  const tailX = startX;
-  const tailY = endY + Math.round(iconSize * 0.3);
-  
-  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background with rounded corners -->
-  <rect width="${size}" height="${size}" rx="${cornerRadius}" fill="hsl(262.1 83.3% 57.8%)"/>
-  
-  <!-- MessageSquare icon -->
-  <path d="M${startX} ${startY}C${startX} ${startY - 10} ${startX + 10} ${startY - 20} ${startX + 20} ${startY - 20}H${endX - 20}C${endX - 10} ${startY - 20} ${endX} ${startY - 10} ${endX} ${startY}V${endY - 20}C${endX} ${endY - 10} ${endX - 10} ${endY} ${endX - 20} ${endY}H${startX + Math.round(iconSize * 0.4)}L${tailX} ${tailY}V${startY}Z" 
-        stroke="white" 
-        stroke-width="${strokeWidth}" 
-        stroke-linecap="round" 
-        stroke-linejoin="round" 
-        fill="none"/>
-</svg>`;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mcpLogoGradient" x1="42" y1="34" x2="218" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#0D4FE8"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="54" fill="url(#mcpLogoGradient)"/>
+  <g stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M73 100L128 68L183 100L128 132L73 100Z"/>
+    <path d="M73 100V157L128 189L183 157V100"/>
+    <path d="M128 132V189"/>
+    <path d="M92 123L79 136L92 149"/>
+    <path d="M111 119L102 153"/>
+    <path d="M119 123L132 136L119 149"/>
+    <path d="M151 120V155L178 137L151 120Z"/>
+  </g>
+</svg>
+`;
 }
 
-// Generate SVG files for each size
-sizes.forEach(size => {
+sizes.forEach((size) => {
   const svgContent = createIconSVG(size);
   const filename = `icon-${size}x${size}.svg`;
   const filepath = path.join(__dirname, 'icons', filename);
-  
+
   fs.writeFileSync(filepath, svgContent);
   console.log(`Created ${filename}`);
 });
 
-console.log('\nSVG icons created! To convert to PNG, you can use:');
+console.log('\nMCP Playground SVG icons created. To convert to PNG, you can use:');
 console.log('1. Online converter like cloudconvert.com');
 console.log('2. If you have ImageMagick: convert icon.svg icon.png');
 console.log('3. If you have Inkscape: inkscape --export-type=png icon.svg');

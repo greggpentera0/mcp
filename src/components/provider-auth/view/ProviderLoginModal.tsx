@@ -1,4 +1,5 @@
 import { ExternalLink, KeyRound, X } from 'lucide-react';
+
 import StandaloneShell from '../../standalone-shell/view/StandaloneShell';
 import { DEFAULT_PROJECT_FOR_EMPTY_SHELL, IS_PLATFORM } from '../../../constants/config';
 import type { LLMProvider } from '../../../types/app';
@@ -41,6 +42,10 @@ const getProviderCommand = ({
     return 'opencode auth login';
   }
 
+  if (provider === 'antigravity') {
+    return 'agy';
+  }
+
   return 'gemini status';
 };
 
@@ -48,6 +53,7 @@ const getProviderTitle = (provider: LLMProvider) => {
   if (provider === 'claude') return 'Claude CLI Login';
   if (provider === 'cursor') return 'Cursor CLI Login';
   if (provider === 'codex') return 'Codex CLI Login';
+  if (provider === 'antigravity') return 'Antigravity CLI Login';
   if (provider === 'opencode') return 'OpenCode CLI Login';
   return 'Gemini CLI Configuration';
 };
@@ -111,7 +117,7 @@ export default function ProviderLoginModal({
                         href="https://aistudio.google.com/app/apikey"
                         target="_blank"
                         rel="noreferrer"
-                        className="flex inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-400"
+                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-400"
                       >
                         Google AI Studio <ExternalLink className="h-3 w-3" />
                       </a>

@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { useMemo } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   ChangeEvent,
@@ -107,6 +106,22 @@ interface ChatComposerProps {
   sendByCtrlEnter?: boolean;
 }
 
+type CommandMenuAnchor = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  bottom: number;
+};
+
+const defaultCommandMenuAnchor: CommandMenuAnchor = {
+  top: 0,
+  left: 16,
+  width: 440,
+  height: 0,
+  bottom: 90,
+};
+
 export default function ChatComposer({
   pendingPermissionRequests,
   handlePermissionDecision,
@@ -161,17 +176,46 @@ export default function ChatComposer({
   sendByCtrlEnter,
 }: ChatComposerProps) {
   const { t } = useTranslation('chat');
-  const commandMenuPosition = useMemo(() => {
-    if (!isCommandMenuOpen) {
-      return { top: 0, left: 16, bottom: 90 };
+  const composerAnchorRef = useRef<HTMLDivElement | null>(null);
+  const [commandMenuPosition, setCommandMenuPosition] = useState<CommandMenuAnchor>(defaultCommandMenuAnchor);
+  const measureCommandMenuPosition = useCallback(() => {
+    const anchor = composerAnchorRef.current;
+    if (!anchor) {
+      return;
     }
-    const textareaRect = textareaRef.current?.getBoundingClientRect();
-    return {
-      top: textareaRect ? Math.max(16, textareaRect.top - 316) : 0,
-      left: textareaRect ? textareaRect.left : 16,
-      bottom: textareaRect ? window.innerHeight - textareaRect.top + 8 : 90,
+    const rect = anchor.getBoundingClientRect();
+    setCommandMenuPosition({
+      top: rect.top,
+      left: rect.left,
+      width: rect.width,
+      height: rect.height,
+      bottom: rect.bottom,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isCommandMenuOpen) {
+      return;
+    }
+    measureCommandMenuPosition();
+
+    const handleViewportChange = () => measureCommandMenuPosition();
+    window.addEventListener('resize', handleViewportChange);
+    window.addEventListener('scroll', handleViewportChange, true);
+
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(handleViewportChange)
+      : null;
+    if (observer && composerAnchorRef.current) {
+      observer.observe(composerAnchorRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleViewportChange);
+      window.removeEventListener('scroll', handleViewportChange, true);
+      observer?.disconnect();
     };
-  }, [input, isCommandMenuOpen, textareaRef]);
+  }, [isCommandMenuOpen, measureCommandMenuPosition]);
 
   // Voice state is hosted here (not in the mic button) so the main Send button can stop
   // recording and send the transcript in one tap, the way the mic button drops it in the box.
@@ -268,12 +312,13 @@ export default function ChatComposer({
           frequentCommands={frequentCommands}
         />
 
-        <PromptInput
-          onSubmit={onSubmit as (event: FormEvent<HTMLFormElement>) => void}
-          status={isLoading ? 'streaming' : 'ready'}
-          className={isTextareaExpanded ? 'chat-input-expanded' : ''}
-          {...getRootProps()}
-        >
+        <div ref={composerAnchorRef}>
+          <PromptInput
+            onSubmit={onSubmit as (event: FormEvent<HTMLFormElement>) => void}
+            status={isLoading ? 'streaming' : 'ready'}
+            className={isTextareaExpanded ? 'chat-input-expanded' : ''}
+            {...getRootProps()}
+          >
           {isDragActive && (
             <div className="absolute inset-0 z-50 flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/50 bg-primary/15">
               <div className="rounded-xl border border-border/30 bg-card p-4 shadow-lg">
@@ -389,7 +434,10 @@ export default function ChatComposer({
             <TokenUsageSummary usage={tokenBudget} onClick={onShowTokenUsage} />
 
             <PromptInputButton
-              tooltip={{ content: t('input.showAllCommands') }}
+              tooltip={isCommandMenuOpen ? undefined : { content: t('input.showAllCommands') }}
+              onMouseDown={(event) => {
+                event.stopPropagation();
+              }}
               onClick={onToggleCommandMenu}
               className="relative"
             >
@@ -441,7 +489,8 @@ export default function ChatComposer({
             </PromptInputSubmit>
           </div>
         </PromptInputFooter>
-      </PromptInput>
+          </PromptInput>
+        </div>
       </div>}
     </div>
   );

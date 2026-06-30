@@ -9,6 +9,7 @@ import { sessionSynchronizerService } from '@/modules/providers/services/session
 import { WS_OPEN_STATE, connectedClients } from '@/modules/websocket/index.js';
 import type { LLMProvider } from '@/shared/types.js';
 import { generateDisplayName } from '@/modules/projects/index.js';
+import { getAntigravityConversationsPath } from '@/shared/utils.js';
 
 type WatcherEventType = 'add' | 'change';
 
@@ -34,6 +35,10 @@ const PROVIDER_WATCH_PATHS: Array<{ provider: LLMProvider; rootPath: string }> =
   {
     provider: 'gemini',
     rootPath: path.join(os.homedir(), '.gemini', 'tmp'),
+  },
+  {
+    provider: 'antigravity',
+    rootPath: getAntigravityConversationsPath(),
   },
   {
     provider: 'opencode',
@@ -77,6 +82,10 @@ let watcherRescheduleAfterRefresh = false;
  * Filters watcher events to provider-specific session artifact file types.
  */
 function isWatcherTargetFile(provider: LLMProvider, filePath: string): boolean {
+  if (provider === 'antigravity') {
+    return filePath.endsWith('.db');
+  }
+
   if (provider === 'opencode') {
     return path.basename(filePath) === 'opencode.db';
   }

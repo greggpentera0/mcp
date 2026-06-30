@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ChevronRight } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 
 import type {
@@ -27,6 +27,7 @@ const PROVIDER_META: { id: LLMProvider; name: string }[] = [
   { id: "claude", name: "Anthropic" },
   { id: "codex", name: "OpenAI" },
   { id: "gemini", name: "Google" },
+  { id: "antigravity", name: "Antigravity" },
   { id: "cursor", name: "Cursor" },
   { id: "opencode", name: "OpenCode" },
 ];
@@ -48,6 +49,8 @@ type ProviderSelectionEmptyStateProps = {
   setCodexModel: (model: string) => void;
   geminiModel: string;
   setGeminiModel: (model: string) => void;
+  antigravityModel: string;
+  setAntigravityModel: (model: string) => void;
   opencodeModel: string;
   setOpenCodeModel: (model: string) => void;
   providerModelCatalog: Partial<Record<LLMProvider, ProviderModelsDefinition>>;
@@ -78,11 +81,13 @@ function getCurrentModel(
   cu: string,
   co: string,
   g: string,
+  a: string,
   o: string,
 ) {
   if (p === "claude") return c;
   if (p === "codex") return co;
   if (p === "gemini") return g;
+  if (p === "antigravity") return a;
   if (p === "opencode") return o;
   return cu;
 }
@@ -91,6 +96,7 @@ function getProviderDisplayName(p: LLMProvider) {
   if (p === "claude") return "Claude";
   if (p === "cursor") return "Cursor";
   if (p === "codex") return "Codex";
+  if (p === "antigravity") return "Antigravity";
   if (p === "opencode") return "OpenCode";
   return "Gemini";
 }
@@ -109,6 +115,8 @@ export default function ProviderSelectionEmptyState({
   setCodexModel,
   geminiModel,
   setGeminiModel,
+  antigravityModel,
+  setAntigravityModel,
   opencodeModel,
   setOpenCodeModel,
   providerModelCatalog,
@@ -120,14 +128,36 @@ export default function ProviderSelectionEmptyState({
 }: ProviderSelectionEmptyStateProps) {
   const { t } = useTranslation("chat");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState("");
+  const [expandedProviders, setExpandedProviders] = useState<Set<LLMProvider>>(() => new Set());
 
   const visibleProviderGroups = useMemo<ProviderGroup[]>(() => {
-    return PROVIDER_META.map((p) => ({
-      id: p.id,
-      name: p.name,
-      models: providerModelCatalog[p.id]?.OPTIONS ?? [],
-    }));
-  }, [providerModelCatalog]);
+    const normalizedQuery = modelSearchQuery.trim().toLowerCase();
+    return PROVIDER_META.map((p) => {
+      const models = providerModelCatalog[p.id]?.OPTIONS ?? [];
+      if (!normalizedQuery) {
+        return {
+          id: p.id,
+          name: p.name,
+          models,
+        };
+      }
+
+      const providerMatches = p.name.toLowerCase().includes(normalizedQuery)
+        || getProviderDisplayName(p.id).toLowerCase().includes(normalizedQuery);
+      return {
+        id: p.id,
+        name: p.name,
+        models: providerMatches
+          ? models
+          : models.filter((model) => (
+              model.value.toLowerCase().includes(normalizedQuery)
+              || model.label.toLowerCase().includes(normalizedQuery)
+              || model.description?.toLowerCase().includes(normalizedQuery)
+            )),
+      };
+    }).filter((group) => !normalizedQuery || group.models.length > 0);
+  }, [modelSearchQuery, providerModelCatalog]);
 
   const nextTaskPrompt = t("tasks.nextTaskPrompt", {
     defaultValue: "Start the next task",
@@ -139,6 +169,7 @@ export default function ProviderSelectionEmptyState({
     cursorModel,
     codexModel,
     geminiModel,
+    antigravityModel,
     opencodeModel,
   );
 
@@ -149,6 +180,23 @@ export default function ProviderSelectionEmptyState({
     );
     return found?.label || currentModel;
   }, [provider, currentModel, providerModelCatalog]);
+
+  const getCurrentModelLabelForProvider = useCallback(
+    (providerId: LLMProvider) => {
+      const modelValue = getCurrentModel(
+        providerId,
+        claudeModel,
+        cursorModel,
+        codexModel,
+        geminiModel,
+        antigravityModel,
+        opencodeModel,
+      );
+      const config = getModelConfig(providerId, providerModelCatalog);
+      return config.OPTIONS.find((o) => o.value === modelValue)?.label || modelValue || config.DEFAULT;
+    },
+    [antigravityModel, claudeModel, codexModel, cursorModel, geminiModel, opencodeModel, providerModelCatalog],
+  );
 
   const setModelForProvider = useCallback(
     (providerId: LLMProvider, modelValue: string) => {
@@ -161,6 +209,9 @@ export default function ProviderSelectionEmptyState({
       } else if (providerId === "gemini") {
         setGeminiModel(modelValue);
         localStorage.setItem("gemini-model", modelValue);
+      } else if (providerId === "antigravity") {
+        setAntigravityModel(modelValue);
+        localStorage.setItem("antigravity-model", modelValue);
       } else if (providerId === "opencode") {
         setOpenCodeModel(modelValue);
         localStorage.setItem("opencode-model", modelValue);
@@ -169,7 +220,7 @@ export default function ProviderSelectionEmptyState({
         localStorage.setItem("cursor-model", modelValue);
       }
     },
-    [setClaudeModel, setCursorModel, setCodexModel, setGeminiModel, setOpenCodeModel],
+    [setAntigravityModel, setClaudeModel, setCursorModel, setCodexModel, setGeminiModel, setOpenCodeModel],
   );
 
   const handleModelSelect = useCallback(
@@ -182,6 +233,26 @@ export default function ProviderSelectionEmptyState({
     },
     [setProvider, setModelForProvider, textareaRef],
   );
+
+  const handleDialogOpenChange = useCallback((open: boolean) => {
+    setDialogOpen(open);
+    if (open) {
+      setExpandedProviders(new Set());
+      setModelSearchQuery("");
+    }
+  }, []);
+
+  const toggleProviderExpanded = useCallback((providerId: LLMProvider) => {
+    setExpandedProviders((previous) => {
+      const next = new Set(previous);
+      if (next.has(providerId)) {
+        next.delete(providerId);
+      } else {
+        next.add(providerId);
+      }
+      return next;
+    });
+  }, []);
 
   if (!selectedSession && !currentSessionId) {
     return (
@@ -196,7 +267,7 @@ export default function ProviderSelectionEmptyState({
             </p>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Card
                 className="group mx-auto max-w-xs cursor-pointer border-border/60 transition-all duration-150 hover:border-border hover:shadow-md active:scale-[0.99]"
@@ -236,16 +307,20 @@ export default function ProviderSelectionEmptyState({
               </div>
               <Command>
                 <CommandInput
+                  value={modelSearchQuery}
+                  onValueChange={setModelSearchQuery}
                   placeholder={t("providerSelection.searchModels", {
                     defaultValue: "Search models...",
                   })}
                 />
                 <CommandList className="max-h-[350px]">
-                  <CommandEmpty>
-                    {t("providerSelection.noModelsFound", {
-                      defaultValue: "No models found.",
-                    })}
-                  </CommandEmpty>
+                  {modelSearchQuery.trim() ? (
+                    <CommandEmpty>
+                      {t("providerSelection.noModelsFound", {
+                        defaultValue: "No models found.",
+                      })}
+                    </CommandEmpty>
+                  ) : null}
                   {visibleProviderGroups.map((group, idx) => (
                     <CommandGroup
                       key={group.id}
@@ -255,10 +330,25 @@ export default function ProviderSelectionEmptyState({
                           : "[&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
                       }
                       heading={
-                        <span className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 text-left"
+                          onClick={() => toggleProviderExpanded(group.id)}
+                        >
+                          {modelSearchQuery.trim() || expandedProviders.has(group.id) ? (
+                            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                          ) : (
+                            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                          )}
                           <SessionProviderLogo provider={group.id} className="h-3.5 w-3.5 shrink-0" />
-                          {group.name}
-                        </span>
+                          <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                          <span className="truncate text-[11px] normal-case tracking-normal text-muted-foreground">
+                            {getCurrentModelLabelForProvider(group.id)}
+                          </span>
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] normal-case tracking-normal text-muted-foreground">
+                            {group.models.length}
+                          </span>
+                        </button>
                       }
                     >
                       {group.models.length === 0 && providerModelsLoading ? (
@@ -266,7 +356,7 @@ export default function ProviderSelectionEmptyState({
                           {t("providerSelection.loadingModels", { defaultValue: "Loading models…" })}
                         </CommandItem>
                       ) : null}
-                      {group.models.map((model) => {
+                      {(modelSearchQuery.trim() || expandedProviders.has(group.id) ? group.models : []).map((model) => {
                         const isSelected = provider === group.id && currentModel === model.value;
                         return (
                           <CommandItem
@@ -277,15 +367,11 @@ export default function ProviderSelectionEmptyState({
                           >
                             <div className="min-w-0 flex-1">
                               <div className="truncate">{model.label}</div>
-                              {/* 
-                              // * Temporarly commented out because the description of models from claude 
-                              // * was a bit inconsistent.  Will return it back when it becomes more consistent.
-                              */}
-                              {/* {model.description && (
+                              {model.description && (
                                 <div className="truncate text-xs text-muted-foreground">
                                   {model.description}
                                 </div>
-                              )} */}
+                              )}
                             </div>
                             {isSelected && (
                               <Check className="ml-auto h-4 w-4 shrink-0 text-primary" />
@@ -314,6 +400,10 @@ export default function ProviderSelectionEmptyState({
                 }),
                 gemini: t("providerSelection.readyPrompt.gemini", {
                   model: geminiModel,
+                }),
+                antigravity: t("providerSelection.readyPrompt.antigravity", {
+                  model: antigravityModel,
+                  defaultValue: "Ready with Antigravity {{model}}",
                 }),
                 opencode: t("providerSelection.readyPrompt.opencode", {
                   model: opencodeModel,

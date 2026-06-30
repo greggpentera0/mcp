@@ -10,6 +10,7 @@ import {
 } from '../constants/constants';
 import type {
   AgentProvider,
+  AntigravityPermissionMode,
   ClaudePermissionsState,
   CodeEditorSettingsState,
   CodexPermissionMode,
@@ -47,6 +48,10 @@ type CodexSettingsStorage = {
   permissionMode?: CodexPermissionMode;
 };
 
+type AntigravitySettingsStorage = {
+  permissionMode?: AntigravityPermissionMode;
+};
+
 type NotificationPreferencesResponse = {
   success?: boolean;
   preferences?: NotificationPreferencesState;
@@ -54,7 +59,7 @@ type NotificationPreferencesResponse = {
 
 type ActiveLoginProvider = AgentProvider | '';
 
-const KNOWN_MAIN_TABS: SettingsMainTab[] = ['agents', 'appearance', 'git', 'api', 'tasks', 'browser', 'notifications', 'plugins', 'about'];
+const KNOWN_MAIN_TABS: SettingsMainTab[] = ['agents', 'appearance', 'git', 'api', 'tasks', 'browser', 'notifications', 'plugins'];
 
 const normalizeMainTab = (tab: string): SettingsMainTab => {
   // Keep backwards compatibility with older callers that still pass "tools".
@@ -79,6 +84,14 @@ const parseJson = <T>(value: string | null, fallback: T): T => {
 
 const toCodexPermissionMode = (value: unknown): CodexPermissionMode => {
   if (value === 'acceptEdits' || value === 'bypassPermissions') {
+    return value;
+  }
+
+  return 'default';
+};
+
+const toAntigravityPermissionMode = (value: unknown): AntigravityPermissionMode => {
+  if (value === 'bypassPermissions') {
     return value;
   }
 
@@ -161,6 +174,7 @@ export function useSettingsController({ isOpen, initialTab }: UseSettingsControl
   ));
   const [codexPermissionMode, setCodexPermissionMode] = useState<CodexPermissionMode>('default');
   const [geminiPermissionMode, setGeminiPermissionMode] = useState<GeminiPermissionMode>('default');
+  const [antigravityPermissionMode, setAntigravityPermissionMode] = useState<AntigravityPermissionMode>('default');
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginProvider, setLoginProvider] = useState<ActiveLoginProvider>('');
@@ -205,6 +219,12 @@ export function useSettingsController({ isOpen, initialTab }: UseSettingsControl
       );
       setGeminiPermissionMode(savedGeminiSettings.permissionMode || 'default');
 
+      const savedAntigravitySettings = parseJson<AntigravitySettingsStorage>(
+        localStorage.getItem('antigravity-settings'),
+        {},
+      );
+      setAntigravityPermissionMode(toAntigravityPermissionMode(savedAntigravitySettings.permissionMode));
+
       try {
         const notificationResponse = await authenticatedFetch('/api/settings/notification-preferences');
         if (notificationResponse.ok) {
@@ -227,6 +247,7 @@ export function useSettingsController({ isOpen, initialTab }: UseSettingsControl
       setCursorPermissions(createEmptyCursorPermissions());
       setNotificationPreferences(createDefaultNotificationPreferences());
       setCodexPermissionMode('default');
+      setAntigravityPermissionMode('default');
       setProjectSortOrder('name');
     }
   }, []);
@@ -282,6 +303,11 @@ export function useSettingsController({ isOpen, initialTab }: UseSettingsControl
         lastUpdated: now,
       }));
 
+      localStorage.setItem('antigravity-settings', JSON.stringify({
+        permissionMode: antigravityPermissionMode,
+        lastUpdated: now,
+      }));
+
       const notificationResponse = await authenticatedFetch('/api/settings/notification-preferences', {
         method: 'PUT',
         body: JSON.stringify(notificationPreferences),
@@ -299,6 +325,7 @@ export function useSettingsController({ isOpen, initialTab }: UseSettingsControl
     claudePermissions.allowedTools,
     claudePermissions.disallowedTools,
     claudePermissions.skipPermissions,
+    antigravityPermissionMode,
     codexPermissionMode,
     cursorPermissions.allowedCommands,
     cursorPermissions.disallowedCommands,
@@ -413,6 +440,8 @@ export function useSettingsController({ isOpen, initialTab }: UseSettingsControl
     providerAuthStatus,
     geminiPermissionMode,
     setGeminiPermissionMode,
+    antigravityPermissionMode,
+    setAntigravityPermissionMode,
     openLoginForProvider,
     showLoginModal,
     setShowLoginModal,
