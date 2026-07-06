@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-label="Daily Codex token usage from local history">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="104" y="52" fill="#172033" font-size="30" font-weight="800">Daily Codex Token Usage From Local History</text>
+<text x="104" y="82" fill="#64748b" font-size="16">742,122,415 total tokens across 52 sessions and 5,654 model calls</text>
+<g><line x1="104" x2="1136" y1="604" y2="604" stroke="#d8dee8" stroke-width="1"/><text x="90" y="609" text-anchor="end" fill="#64748b" font-size="13">0M</text>
+<line x1="104" x2="1136" y1="505.6" y2="505.6" stroke="#d8dee8" stroke-width="1"/><text x="90" y="510.6" text-anchor="end" fill="#64748b" font-size="13">70M</text>
+<line x1="104" x2="1136" y1="407.2" y2="407.2" stroke="#d8dee8" stroke-width="1"/><text x="90" y="412.2" text-anchor="end" fill="#64748b" font-size="13">140M</text>
+<line x1="104" x2="1136" y1="308.8" y2="308.8" stroke="#d8dee8" stroke-width="1"/><text x="90" y="313.8" text-anchor="end" fill="#64748b" font-size="13">210M</text>
+<line x1="104" x2="1136" y1="210.39999999999998" y2="210.39999999999998" stroke="#d8dee8" stroke-width="1"/><text x="90" y="215.39999999999998" text-anchor="end" fill="#64748b" font-size="13">280M</text>
+<line x1="104" x2="1136" y1="112" y2="112" stroke="#d8dee8" stroke-width="1"/><text x="90" y="117" text-anchor="end" fill="#64748b" font-size="13">350M</text></g>
+<line x1="104" x2="104" y1="112" y2="604" stroke="#94a3b8" stroke-width="1.2"/>
+<line x1="104" x2="1136" y1="604" y2="604" stroke="#94a3b8" stroke-width="1.2"/>
+<text x="34" y="358" transform="rotate(-90 34 358)" text-anchor="middle" fill="#64748b" font-size="14">Total tokens</text>
+<g><title>2025-12-22: 1,874,425 total tokens, 0.00 priced credits, 1 sessions</title><rect x="104" y="603.3959954971428" width="62.76923076923077" height="0.6040045028571428" fill="#2563eb" rx="4"/>
+<rect x="104" y="601.4336633371429" width="62.76923076923077" height="1.9623321599999999" fill="#16a34a" rx="4"/>
+<text x="135.3846153846154" y="591.365094" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">1.9M</text><text x="135.3846153846154" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 135.3846153846154 638)">2025-12-22</text></g>
+<g><title>2026-02-18: 31,774,965 total tokens, 0.00 priced credits, 1 sessions</title><rect x="184.76923076923077" y="601.4960531542857" width="62.76923076923077" height="2.5039468457142857" fill="#2563eb" rx="4"/>
+<rect x="184.76923076923077" y="559.7006812685714" width="62.76923076923077" height="41.79537188571429" fill="#16a34a" rx="4"/>
+<text x="216.15384615384616" y="549.3334777714285" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">32M</text><text x="216.15384615384616" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 216.15384615384616 638)">2026-02-18</text></g>
+<g><title>2026-02-19: 10,756,527 total tokens, 0.00 priced credits, 1 sessions</title><rect x="265.53846153846155" y="603.1322722514286" width="62.76923076923077" height="0.8677277485714286" fill="#2563eb" rx="4"/>
+<rect x="265.53846153846155" y="589.17912976" width="62.76923076923077" height="13.953142491428572" fill="#16a34a" rx="4"/>
+<text x="296.9230769230769" y="578.8793963314286" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">11M</text><text x="296.9230769230769" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 296.9230769230769 638)">2026-02-19</text></g>
+<g><title>2026-03-05: 7,065,327 total tokens, 115.66 priced credits, 3 sessions</title><rect x="346.3076923076923" y="603.1571477714285" width="62.76923076923077" height="0.8428522285714286" fill="#2563eb" rx="4"/>
+<rect x="346.3076923076923" y="594.3286322971428" width="62.76923076923077" height="8.828515474285714" fill="#16a34a" rx="4"/>
+<text x="377.6923076923077" y="584.0681689028571" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">7.1M</text><text x="377.6923076923077" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 377.6923076923077 638)">2026-03-05</text></g>
+<g><title>2026-03-07: 45,940,372 total tokens, 495.64 priced credits, 1 sessions</title><rect x="427.0769230769231" y="601.4460645485715" width="62.76923076923077" height="2.5539354514285715" fill="#2563eb" rx="4"/>
+<rect x="427.0769230769231" y="540.04338496" width="62.76923076923077" height="61.40267958857143" fill="#16a34a" rx="4"/>
+<text x="458.46153846153845" y="529.4209627885714" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">46M</text><text x="458.46153846153845" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 458.46153846153845 638)">2026-03-07</text></g>
+<g><title>2026-03-25: 11,809,070 total tokens, 205.23 priced credits, 1 sessions</title><rect x="507.84615384615387" y="602.2584900914286" width="62.76923076923077" height="1.7415099085714285" fill="#2563eb" rx="4"/>
+<rect x="507.84615384615387" y="587.7214701142857" width="62.76923076923077" height="14.537019977142858" fill="#16a34a" rx="4"/>
+<text x="539.2307692307693" y="577.3998216" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">12M</text><text x="539.2307692307693" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 539.2307692307693 638)">2026-03-25</text></g>
+<g><title>2026-04-06: 38,921,007 total tokens, 405.24 priced credits, 1 sessions</title><rect x="588.6153846153846" y="602.5973318971429" width="62.76923076923077" height="1.402668102857143" fill="#2563eb" rx="4"/>
+<rect x="588.6153846153846" y="549.7716236457144" width="62.76923076923077" height="52.82570825142857" fill="#16a34a" rx="4"/>
+<text x="620" y="539.2881844457143" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">39M</text><text x="620" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 620 638)">2026-04-06</text></g>
+<g><title>2026-05-06: 341,774,981 total tokens, 8,033.58 priced credits, 8 sessions</title><rect x="669.3846153846155" y="552.9068247657143" width="62.76923076923077" height="51.09317523428572" fill="#2563eb" rx="4"/>
+<rect x="669.3846153846155" y="127.92048602285718" width="62.76923076923077" height="424.98633874285713" fill="#16a34a" rx="4"/>
+<rect x="669.3846153846155" y="126.56951306285717" width="62.76923076923077" height="1.35097296" fill="#c2410c" rx="4"/><text x="700.7692307692308" y="113.56202670857147" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">342M</text><text x="700.7692307692308" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 700.7692307692308 638)">2026-05-06</text></g>
+<g><title>2026-06-15: 369,294 total tokens, 14.90 priced credits, 2 sessions</title>
+
+<text x="781.5384615384615" y="593.4808781485714" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">0.4M</text><text x="781.5384615384615" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 781.5384615384615 638)">2026-06-15</text></g>
+<g><title>2026-06-24: 12,769,088 total tokens, 559.06 priced credits, 11 sessions</title><rect x="830.9230769230769" y="599.6587311657142" width="62.76923076923077" height="4.341268834285715" fill="#2563eb" rx="4"/>
+<rect x="830.9230769230769" y="586.2290092" width="62.76923076923077" height="13.429721965714286" fill="#16a34a" rx="4"/>
+<text x="862.3076923076923" y="576.0503105828572" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">13M</text><text x="862.3076923076923" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 862.3076923076923 638)">2026-06-24</text></g>
+<g><title>2026-06-25: 2,624,238 total tokens, 120.80 priced credits, 3 sessions</title><rect x="911.6923076923077" y="602.9936772571428" width="62.76923076923077" height="1.0063227428571428" fill="#2563eb" rx="4"/>
+<rect x="911.6923076923077" y="600.3252941714286" width="62.76923076923077" height="2.668383085714286" fill="#16a34a" rx="4"/>
+<text x="943.0769230769231" y="590.3110711542857" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">2.6M</text><text x="943.0769230769231" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 943.0769230769231 638)">2026-06-25</text></g>
+<g><title>2026-06-29: 173,151,550 total tokens, 3,689.26 priced credits, 15 sessions</title><rect x="992.4615384615386" y="590.6451702742858" width="62.76923076923077" height="13.354829725714286" fill="#2563eb" rx="4"/>
+<rect x="992.4615384615386" y="362.2510107314286" width="62.76923076923077" height="228.39415954285715" fill="#16a34a" rx="4"/>
+<rect x="992.4615384615386" y="361.2859569485715" width="62.76923076923077" height="0.9650537828571428" fill="#c2410c" rx="4"/><text x="1023.8461538461539" y="350.5983925714286" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">173M</text><text x="1023.8461538461539" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 1023.8461538461539 638)">2026-06-29</text></g>
+<g><title>2026-06-30: 63,291,571 total tokens, 1,249.52 priced credits, 4 sessions</title><rect x="1073.2307692307693" y="598.0745698857143" width="62.76923076923077" height="5.925430114285714" fill="#2563eb" rx="4"/>
+<rect x="1073.2307692307693" y="515.7883289714285" width="62.76923076923077" height="82.28624091428571" fill="#16a34a" rx="4"/>
+<rect x="1073.2307692307693" y="515.1956460914286" width="62.76923076923077" height="0.59268288" fill="#c2410c" rx="4"/><text x="1104.6153846153848" y="505.03013448" text-anchor="middle" fill="#172033" font-size="12" font-weight="700">63M</text><text x="1104.6153846153848" y="638" text-anchor="middle" fill="#172033" font-size="12" transform="rotate(-35 1104.6153846153848 638)">2026-06-30</text></g>
+<g transform="translate(104, 684)">
+<rect x="0" y="-13" width="14" height="14" fill="#2563eb" rx="2"/><text x="22" y="0" fill="#172033" font-size="13">Non-cached input</text>
+<rect x="170" y="-13" width="14" height="14" fill="#16a34a" rx="2"/><text x="192" y="0" fill="#172033" font-size="13">Cached input</text>
+<rect x="318" y="-13" width="14" height="14" fill="#c2410c" rx="2"/><text x="340" y="0" fill="#172033" font-size="13">Output</text>
+</g>
+<text x="1136" y="702" text-anchor="end" fill="#64748b" font-size="12">Generated 2026-06-30T19:27:41.131Z; dates in America/Denver</text>
+</svg>
