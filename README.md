@@ -107,6 +107,15 @@ Run from this repository when you want the host machine to provide the agent CLI
 
 Use Node.js 22. Newer majors such as Node.js 26 can install packages but fail at runtime when native modules such as `better-sqlite3` were built for a different Node ABI.
 
+##### macOS/Linux Launcher
+
+```bash
+cd /path/to/mcp
+./launch.sh
+```
+
+The launcher selects Node.js 22 from nvm, Homebrew, or a user-local download, creates `.env` when needed, installs npm dependencies, installs missing agent CLIs, and starts the dev server. Use `./launch.sh --service` to install a user service, or `./launch.sh --agent-clis-only --strict-agent-clis` to install/verify only the agent CLIs.
+
 ##### macOS Local Run
 
 ```bash
@@ -165,7 +174,9 @@ npm install
 npm run dev
 ```
 
-Only install and authenticate the CLIs you plan to use. Missing providers should report installation or authentication status without blocking the rest of the app.
+`./launch.sh` installs missing agent CLIs by default for local macOS/Linux source runs: Claude Code (`claude`), Codex (`codex`), Gemini CLI (`gemini`), Antigravity (`agy`), OpenCode (`opencode`), and Cursor CLI (`cursor-agent`). Use `--agent-clis-only` for a CLI-only bootstrap, `--no-agent-cli-install` to skip that bootstrap, `--upgrade-agent-clis` to re-run installers, or `--strict-agent-clis` to fail startup if any CLI is still missing.
+
+Authenticate the CLIs you plan to use. Missing providers should report installation or authentication status without blocking the rest of the app unless strict launcher mode is enabled.
 
 ```bash
 claude --version
@@ -173,11 +184,15 @@ codex --version
 gemini --version
 agy --version
 opencode --version
+cursor-agent --version
 ```
 
 Optional local provider overrides:
 
 ```bash
+CLAUDE_CLI_PATH=claude
+CURSOR_AGENT_PATH=cursor-agent
+GEMINI_PATH=gemini
 ANTIGRAVITY_PATH=agy
 OPENCODE_PATH=opencode
 OPENCODE_CONFIG=/path/to/opencode.json
@@ -203,7 +218,7 @@ npm install
 npm run build
 ```
 
-Keep `HOST=127.0.0.1` for local-only access. Use `HOST=0.0.0.0` only when authentication is enabled or the server is behind external access control.
+Use `HOST=0.0.0.0` when the dev server should be reachable from another browser, VM, or device on the same development network.
 
 ##### Linux: systemd User Service
 
@@ -217,11 +232,15 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/home/YOUR_USER/Code/mcp
+Environment=PATH=/home/YOUR_USER/.local/bin:/home/YOUR_USER/.opencode/bin:/home/YOUR_USER/.nvm/versions/node/v22/bin:/usr/local/bin:/usr/bin:/bin
 Environment=SERVER_PORT=3221
 Environment=VITE_PORT=5173
 Environment=HOST=127.0.0.1
 Environment=DISABLE_AUTH=true
 Environment=VITE_DISABLE_AUTH=true
+Environment=CLAUDE_CLI_PATH=claude
+Environment=CURSOR_AGENT_PATH=cursor-agent
+Environment=GEMINI_PATH=gemini
 Environment=ANTIGRAVITY_PATH=agy
 Environment=OPENCODE_PATH=opencode
 ExecStart=/home/YOUR_USER/.nvm/versions/node/v22/bin/node dist-server/server/index.js
@@ -280,7 +299,7 @@ Create `~/Library/LaunchAgents/com.mcp-playground.local.plist`:
     <key>EnvironmentVariables</key>
     <dict>
       <key>PATH</key>
-      <string>/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+      <string>/Users/YOUR_USER/.local/bin:/Users/YOUR_USER/.opencode/bin:/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
       <key>SERVER_PORT</key>
       <string>3221</string>
       <key>VITE_PORT</key>
@@ -291,6 +310,12 @@ Create `~/Library/LaunchAgents/com.mcp-playground.local.plist`:
       <string>true</string>
       <key>VITE_DISABLE_AUTH</key>
       <string>true</string>
+      <key>CLAUDE_CLI_PATH</key>
+      <string>claude</string>
+      <key>CURSOR_AGENT_PATH</key>
+      <string>cursor-agent</string>
+      <key>GEMINI_PATH</key>
+      <string>gemini</string>
       <key>ANTIGRAVITY_PATH</key>
       <string>agy</string>
       <key>OPENCODE_PATH</key>

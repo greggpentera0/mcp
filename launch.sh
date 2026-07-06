@@ -16,12 +16,22 @@ OPEN_DELAY_SECONDS="3"
 SYSTEMD_SERVICE_NAME="cloudcli-mcp.service"
 LAUNCHD_LABEL="com.mcp-playground.local"
 NATIVE_PACKAGES=(better-sqlite3 node-pty bcrypt sharp)
+USER_LOCAL_BIN_DIR="${MCP_PLAYGROUND_LOCAL_BIN_DIR:-$HOME/.local/bin}"
+USER_NPM_PREFIX="${MCP_PLAYGROUND_NPM_PREFIX:-$HOME/.local/share/mcp-playground/npm-global}"
+LOCAL_NODE_ROOT="${MCP_PLAYGROUND_NODE_ROOT:-$HOME/.local/share/mcp-playground/node}"
+CODEX_BIN_DIR="${CODEX_INSTALL_DIR:-$USER_LOCAL_BIN_DIR}"
+ANTIGRAVITY_BIN_DIR="${ANTIGRAVITY_INSTALL_DIR:-$USER_LOCAL_BIN_DIR}"
+OPENCODE_BIN_DIR="$HOME/.opencode/bin"
 
 MODE="dev"
 RUN_NPM_INSTALL="true"
 FORCE_REINSTALL="false"
 REBUILD_NATIVE="false"
 OPEN_BROWSER="false"
+INSTALL_AGENT_CLIS="true"
+UPGRADE_AGENT_CLIS="false"
+STRICT_AGENT_CLIS="false"
+AGENT_CLI_FAILURES=()
 
 print_step() {
   printf '[mcp-playground] %s\n' "$*"
@@ -48,7 +58,7 @@ trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
 
 usage() {
   cat <<'USAGE'
-Usage: ./launch-mcp-playground.sh [options]
+Usage: ./launch.sh [options]
 
 Launch MCP Playground from this source checkout on macOS or Linux.
 
@@ -56,7 +66,11 @@ Default behavior:
   - Detects macOS or Linux.
   - Uses Node.js 22 from nvm when available.
   - On macOS without nvm, installs or uses Homebrew node@22.
+  - When Node.js 22 is still unavailable, installs a user-local Node.js 22
+    runtime from nodejs.org.
   - Copies .env.example to .env when .env does not exist.
+  - Installs missing agent CLIs: claude, codex, gemini, agy, opencode,
+    and cursor-agent.
   - Runs npm install when dependencies are missing or stale.
   - Starts the development app with npm run dev.
 
@@ -65,6 +79,10 @@ Options:
                          Uses systemd --user on Linux and launchd on macOS.
   --dev                  Start the foreground development server. This is the default.
   --no-install           Skip npm install.
+  --no-agent-cli-install Skip installing missing agent CLIs.
+  --upgrade-agent-clis   Re-run agent CLI installers even when commands exist.
+  --strict-agent-clis    Fail startup when any agent CLI is unavailable after install.
+  --agent-clis-only      Install or verify agent CLIs and exit without launching.
   --reinstall            Remove node_modules before npm install.
   --rebuild-native       Rebuild native packages for the active Node.js 22 runtime.
   --host HOST            Override HOST for this launch or service install.
@@ -78,15 +96,94 @@ Options:
   -h, --help             Show this help.
 
 Examples:
-  ./launch-mcp-playground.sh
-  ./launch-mcp-playground.sh --rebuild-native
-  ./launch-mcp-playground.sh --service
-  ./launch-mcp-playground.sh --host 0.0.0.0 --auth --service
+  ./launch.sh
+  ./launch.sh --rebuild-native
+  ./launch.sh --agent-clis-only --strict-agent-clis
+  ./launch.sh --no-agent-cli-install
+  ./launch.sh --service
+  ./launch.sh --host 0.0.0.0 --auth --service
 USAGE
 }
 
 command_exists() {
   command -v "$1" >/dev/null 2>&1
+}
+
+download_url_to_file() {
+  local url="$1"
+  local output="$2"
+
+  if command_exists curl; then
+    curl -fsSL "$url" -o "$output"
+    return $?
+  fi
+
+  if command_exists wget; then
+    wget -q -O "$output" "$url"
+    return $?
+  fi
+
+  print_error "curl or wget is required to download $url."
+  return 1
+}
+
+download_url_to_stdout() {
+  local url="$1"
+
+  if command_exists curl; then
+    curl -fsSL "$url"
+    return $?
+  fi
+
+  if command_exists wget; then
+    wget -q -O - "$url"
+    return $?
+  fi
+
+  print_error "curl or wget is required to download $url."
+  return 1
+}
+
+sha256_file() {
+  local file="$1"
+
+  if command_exists sha256sum; then
+    sha256sum "$file" | awk '{ print $1 }'
+    return $?
+  fi
+
+  if command_exists shasum; then
+    shasum -a 256 "$file" | awk '{ print $1 }'
+    return $?
+  fi
+
+  print_error "sha256sum or shasum is required to verify downloads."
+  return 1
+}
+
+prepend_path_dir() {
+  local dir="$1"
+
+  [[ -n "$dir" ]] || return 0
+
+  case ":$PATH:" in
+    *":$dir:"*)
+      ;;
+    *)
+      export PATH="$dir:$PATH"
+      ;;
+  esac
+}
+
+configure_agent_cli_path() {
+  prepend_path_dir "$HOME/.claude/local/bin"
+  prepend_path_dir "$HOME/.claude/local"
+  prepend_path_dir "$USER_NPM_PREFIX/bin"
+  prepend_path_dir "$OPENCODE_BIN_DIR"
+  prepend_path_dir "$USER_LOCAL_BIN_DIR"
+  prepend_path_dir "$CODEX_BIN_DIR"
+  prepend_path_dir "$ANTIGRAVITY_BIN_DIR"
+  hash -r 2>/dev/null || true
 }
 
 require_arg() {
@@ -169,6 +266,141 @@ use_homebrew_node() {
   hash -r
 }
 
+node_release_platform() {
+  local os_name
+  local machine
+  local os
+  local arch
+
+  os_name="$(uname -s)"
+  machine="$(uname -m)"
+
+  case "$os_name" in
+    Darwin)
+      os="darwin"
+      ;;
+    Linux)
+      os="linux"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  case "$machine" in
+    x86_64|amd64)
+      arch="x64"
+      ;;
+    arm64|aarch64)
+      arch="arm64"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+
+  if [[ "$os" == "darwin" && "$arch" == "x64" ]] && command_exists sysctl; then
+    if [[ "$(sysctl -n sysctl.proc_translated 2>/dev/null || true)" == "1" ]]; then
+      arch="arm64"
+    fi
+  fi
+
+  printf '%s-%s\n' "$os" "$arch"
+}
+
+resolve_node_release_from_checksums() {
+  local required_major="$1"
+  local platform="$2"
+  local manifest
+  local asset
+  local checksum
+
+  manifest="$(download_url_to_stdout "https://nodejs.org/dist/latest-v${required_major}.x/SHASUMS256.txt")" || return 1
+  asset="$(printf '%s\n' "$manifest" |
+    awk -v platform="$platform" '$2 ~ ("^node-v[0-9]+\\.[0-9]+\\.[0-9]+-" platform "\\.tar\\.gz$") { print $2; exit }')"
+
+  [[ -n "$asset" ]] || return 1
+
+  checksum="$(printf '%s\n' "$manifest" | awk -v asset="$asset" '$2 == asset { print $1; exit }')"
+  [[ -n "$checksum" ]] || return 1
+
+  printf '%s %s\n' "$asset" "$checksum"
+}
+
+use_local_node() {
+  local required_major="$1"
+  local platform
+  local release
+  local asset
+  local checksum
+  local version
+  local dist_version
+  local install_dir
+  local tmp_dir
+  local archive
+  local actual_checksum
+  local existing_node
+
+  for existing_node in "$LOCAL_NODE_ROOT"/node-v"$required_major".*-*/bin/node; do
+    if [[ -x "$existing_node" ]]; then
+      export PATH="$(dirname "$existing_node"):$PATH"
+      hash -r
+      if [[ "$(node_major || true)" == "$required_major" ]]; then
+        return 0
+      fi
+    fi
+  done
+
+  platform="$(node_release_platform)" || return 1
+  release="$(resolve_node_release_from_checksums "$required_major" "$platform")" || return 1
+  asset="${release%% *}"
+  checksum="${release#* }"
+  version="${asset%%-$platform.tar.gz}"
+  dist_version="${version#node-}"
+  install_dir="$LOCAL_NODE_ROOT/$version-$platform"
+
+  if [[ -x "$install_dir/bin/node" ]]; then
+    export PATH="$install_dir/bin:$PATH"
+    hash -r
+    return 0
+  fi
+
+  tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/mcp-playground-node.XXXXXX")" || return 1
+  archive="$tmp_dir/$asset"
+
+  print_step "Installing user-local Node.js ${version#node-v} for $platform"
+  if ! download_url_to_file "https://nodejs.org/dist/$dist_version/$asset" "$archive"; then
+    rm -rf "$tmp_dir"
+    return 1
+  fi
+
+  actual_checksum="$(sha256_file "$archive")" || {
+    rm -rf "$tmp_dir"
+    return 1
+  }
+
+  if [[ "$actual_checksum" != "$checksum" ]]; then
+    rm -rf "$tmp_dir"
+    print_error "Node.js download checksum mismatch for $asset."
+    return 1
+  fi
+
+  mkdir -p "$LOCAL_NODE_ROOT"
+  rm -rf "$install_dir.tmp"
+  mkdir -p "$install_dir.tmp"
+  if ! tar -xzf "$archive" -C "$install_dir.tmp" --strip-components=1; then
+    rm -rf "$tmp_dir" "$install_dir.tmp"
+    return 1
+  fi
+
+  rm -rf "$install_dir"
+  mv "$install_dir.tmp" "$install_dir"
+  rm -rf "$tmp_dir"
+
+  export PATH="$install_dir/bin:$PATH"
+  hash -r
+}
+
 select_node_runtime() {
   local required_version="$1"
   local required_major="$2"
@@ -187,7 +419,11 @@ select_node_runtime() {
     return 0
   fi
 
-  fail "Node.js ${required_major} is required. Install nvm or put Node ${required_major} on PATH."
+  if use_local_node "$required_major"; then
+    return 0
+  fi
+
+  fail "Node.js ${required_major} is required. Install nvm, Homebrew node@${required_major}, or put Node ${required_major} on PATH."
 }
 
 require_node_runtime() {
@@ -288,6 +524,159 @@ install_dependencies() {
   if [[ "$REBUILD_NATIVE" == "true" ]]; then
     print_step "Rebuilding native packages for $(node -v)"
     npm rebuild "${NATIVE_PACKAGES[@]}"
+  fi
+}
+
+run_remote_script() {
+  local url="$1"
+  shift
+
+  if command_exists curl; then
+    curl -fsSL "$url" | "$@"
+    return $?
+  fi
+
+  if command_exists wget; then
+    wget -q -O - "$url" | "$@"
+    return $?
+  fi
+
+  print_error "curl or wget is required to install agent CLIs."
+  return 1
+}
+
+run_install_command() {
+  local status
+
+  set +e
+  "$@"
+  status=$?
+  set -e
+
+  return "$status"
+}
+
+install_codex_cli() {
+  mkdir -p "$CODEX_BIN_DIR"
+  run_remote_script \
+    "https://chatgpt.com/codex/install.sh" \
+    env CODEX_NON_INTERACTIVE=1 CODEX_INSTALL_DIR="$CODEX_BIN_DIR" sh
+}
+
+install_claude_cli() {
+  run_remote_script "https://claude.ai/install.sh" bash
+}
+
+install_gemini_cli() {
+  mkdir -p "$USER_NPM_PREFIX"
+  env NPM_CONFIG_PREFIX="$USER_NPM_PREFIX" npm install -g @google/gemini-cli
+}
+
+install_antigravity_cli() {
+  mkdir -p "$ANTIGRAVITY_BIN_DIR"
+  run_remote_script \
+    "https://antigravity.google/cli/install.sh" \
+    bash -s -- --dir "$ANTIGRAVITY_BIN_DIR"
+}
+
+install_opencode_cli() {
+  run_remote_script "https://opencode.ai/install" bash -s -- --no-modify-path
+}
+
+install_cursor_cli() {
+  run_remote_script "https://cursor.com/install" bash
+}
+
+read_cli_version() {
+  local command_name="$1"
+  local output
+  local status
+
+  set +e
+  output="$("$command_name" --version 2>&1)"
+  status=$?
+  set -e
+
+  if [[ "$status" -eq 0 ]]; then
+    printf '%s\n' "$output" | sed -n '1p'
+  fi
+}
+
+print_cli_status() {
+  local label="$1"
+  local command_name="$2"
+  local version
+
+  if ! command_exists "$command_name"; then
+    print_warn "${label}: ${command_name} was not found on PATH"
+    return 1
+  fi
+
+  version="$(read_cli_version "$command_name" || true)"
+  if [[ -n "$version" ]]; then
+    print_step "${label}: ${version} ($(command -v "$command_name"))"
+  else
+    print_step "${label}: available at $(command -v "$command_name")"
+  fi
+}
+
+install_agent_cli() {
+  local label="$1"
+  local command_name="$2"
+  local installer="$3"
+
+  if command_exists "$command_name" && [[ "$UPGRADE_AGENT_CLIS" != "true" ]]; then
+    print_cli_status "$label" "$command_name" || true
+    return 0
+  fi
+
+  if [[ "$UPGRADE_AGENT_CLIS" == "true" && -n "$(command -v "$command_name" 2>/dev/null || true)" ]]; then
+    print_step "Updating ${label} CLI"
+  else
+    print_step "Installing ${label} CLI"
+  fi
+
+  if run_install_command "$installer"; then
+    configure_agent_cli_path
+    if command_exists "$command_name"; then
+      print_cli_status "$label" "$command_name" || true
+      return 0
+    fi
+
+    print_warn "${label} installer completed, but ${command_name} is not on PATH."
+  else
+    print_warn "${label} installer failed."
+  fi
+
+  AGENT_CLI_FAILURES+=("$label")
+  return 0
+}
+
+install_agent_clis() {
+  if [[ "$INSTALL_AGENT_CLIS" != "true" ]]; then
+    print_step "Skipping agent CLI installation"
+    return 0
+  fi
+
+  configure_agent_cli_path
+  AGENT_CLI_FAILURES=()
+
+  print_step "Checking agent CLIs"
+  install_agent_cli "Claude Code" "claude" install_claude_cli
+  install_agent_cli "Codex" "codex" install_codex_cli
+  install_agent_cli "Gemini CLI" "gemini" install_gemini_cli
+  install_agent_cli "Antigravity" "agy" install_antigravity_cli
+  install_agent_cli "OpenCode" "opencode" install_opencode_cli
+  install_agent_cli "Cursor CLI" "cursor-agent" install_cursor_cli
+
+  if [[ "${#AGENT_CLI_FAILURES[@]}" -eq 0 ]]; then
+    print_step "Agent CLI check complete"
+    return 0
+  fi
+
+  print_warn "Agent CLIs not ready: ${AGENT_CLI_FAILURES[*]}"
+  if [[ "$STRICT_AGENT_CLIS" == "true" ]]; then
+    fail "strict agent CLI mode is enabled."
   fi
 }
 
@@ -504,8 +893,13 @@ install_linux_service() {
   local host
   local disable_auth
   local vite_disable_auth
+  local claude_cli_path
+  local cursor_agent_path
+  local cursor_cli_path
+  local gemini_path
   local antigravity_path
   local opencode_path
+  local opencode_cli_path
   local opencode_config
 
   node_bin="$(command -v node)"
@@ -517,8 +911,13 @@ install_linux_service() {
   host="$(env_value HOST "$DEFAULT_HOST")"
   disable_auth="$(env_value DISABLE_AUTH "true")"
   vite_disable_auth="$(env_value VITE_DISABLE_AUTH "true")"
+  claude_cli_path="$(env_optional_value CLAUDE_CLI_PATH)"
+  cursor_agent_path="$(env_optional_value CURSOR_AGENT_PATH)"
+  cursor_cli_path="$(env_optional_value CURSOR_CLI_PATH)"
+  gemini_path="$(env_optional_value GEMINI_PATH)"
   antigravity_path="$(env_value ANTIGRAVITY_PATH "agy")"
   opencode_path="$(env_value OPENCODE_PATH "opencode")"
+  opencode_cli_path="$(env_optional_value OPENCODE_CLI_PATH)"
   opencode_config="$(env_optional_value OPENCODE_CONFIG)"
 
   mkdir -p "$service_dir"
@@ -536,8 +935,23 @@ install_linux_service() {
     write_systemd_env_line HOST "$host"
     write_systemd_env_line DISABLE_AUTH "$disable_auth"
     write_systemd_env_line VITE_DISABLE_AUTH "$vite_disable_auth"
+    if [[ -n "$claude_cli_path" ]]; then
+      write_systemd_env_line CLAUDE_CLI_PATH "$claude_cli_path"
+    fi
+    if [[ -n "$cursor_agent_path" ]]; then
+      write_systemd_env_line CURSOR_AGENT_PATH "$cursor_agent_path"
+    fi
+    if [[ -n "$cursor_cli_path" ]]; then
+      write_systemd_env_line CURSOR_CLI_PATH "$cursor_cli_path"
+    fi
+    if [[ -n "$gemini_path" ]]; then
+      write_systemd_env_line GEMINI_PATH "$gemini_path"
+    fi
     write_systemd_env_line ANTIGRAVITY_PATH "$antigravity_path"
     write_systemd_env_line OPENCODE_PATH "$opencode_path"
+    if [[ -n "$opencode_cli_path" ]]; then
+      write_systemd_env_line OPENCODE_CLI_PATH "$opencode_cli_path"
+    fi
     if [[ -n "$opencode_config" ]]; then
       write_systemd_env_line OPENCODE_CONFIG "$opencode_config"
     fi
@@ -581,8 +995,13 @@ install_macos_service() {
   local host
   local disable_auth
   local vite_disable_auth
+  local claude_cli_path
+  local cursor_agent_path
+  local cursor_cli_path
+  local gemini_path
   local antigravity_path
   local opencode_path
+  local opencode_cli_path
   local opencode_config
 
   node_bin="$(command -v node)"
@@ -595,8 +1014,13 @@ install_macos_service() {
   host="$(env_value HOST "$DEFAULT_HOST")"
   disable_auth="$(env_value DISABLE_AUTH "true")"
   vite_disable_auth="$(env_value VITE_DISABLE_AUTH "true")"
+  claude_cli_path="$(env_optional_value CLAUDE_CLI_PATH)"
+  cursor_agent_path="$(env_optional_value CURSOR_AGENT_PATH)"
+  cursor_cli_path="$(env_optional_value CURSOR_CLI_PATH)"
+  gemini_path="$(env_optional_value GEMINI_PATH)"
   antigravity_path="$(env_value ANTIGRAVITY_PATH "agy")"
   opencode_path="$(env_value OPENCODE_PATH "opencode")"
+  opencode_cli_path="$(env_optional_value OPENCODE_CLI_PATH)"
   opencode_config="$(env_optional_value OPENCODE_CONFIG)"
 
   mkdir -p "$plist_dir" "$log_dir"
@@ -624,8 +1048,23 @@ PLIST
     write_plist_string_entry "      " "HOST" "$host"
     write_plist_string_entry "      " "DISABLE_AUTH" "$disable_auth"
     write_plist_string_entry "      " "VITE_DISABLE_AUTH" "$vite_disable_auth"
+    if [[ -n "$claude_cli_path" ]]; then
+      write_plist_string_entry "      " "CLAUDE_CLI_PATH" "$claude_cli_path"
+    fi
+    if [[ -n "$cursor_agent_path" ]]; then
+      write_plist_string_entry "      " "CURSOR_AGENT_PATH" "$cursor_agent_path"
+    fi
+    if [[ -n "$cursor_cli_path" ]]; then
+      write_plist_string_entry "      " "CURSOR_CLI_PATH" "$cursor_cli_path"
+    fi
+    if [[ -n "$gemini_path" ]]; then
+      write_plist_string_entry "      " "GEMINI_PATH" "$gemini_path"
+    fi
     write_plist_string_entry "      " "ANTIGRAVITY_PATH" "$antigravity_path"
     write_plist_string_entry "      " "OPENCODE_PATH" "$opencode_path"
+    if [[ -n "$opencode_cli_path" ]]; then
+      write_plist_string_entry "      " "OPENCODE_CLI_PATH" "$opencode_cli_path"
+    fi
     if [[ -n "$opencode_config" ]]; then
       write_plist_string_entry "      " "OPENCODE_CONFIG" "$opencode_config"
     fi
@@ -688,6 +1127,22 @@ parse_args() {
         RUN_NPM_INSTALL="false"
         shift
         ;;
+      --no-agent-cli-install)
+        INSTALL_AGENT_CLIS="false"
+        shift
+        ;;
+      --upgrade-agent-clis)
+        UPGRADE_AGENT_CLIS="true"
+        shift
+        ;;
+      --strict-agent-clis)
+        STRICT_AGENT_CLIS="true"
+        shift
+        ;;
+      --agent-clis-only)
+        MODE="agent-clis"
+        shift
+        ;;
       --reinstall)
         FORCE_REINSTALL="true"
         shift
@@ -742,8 +1197,16 @@ main() {
   check_supported_os
   check_repo_root
   require_node_runtime
+  configure_agent_cli_path
+
+  if [[ "$MODE" == "agent-clis" ]]; then
+    install_agent_clis
+    return 0
+  fi
+
   ensure_env_file
   install_dependencies
+  install_agent_clis
 
   if [[ "$MODE" == "service" ]]; then
     install_user_service
