@@ -49,7 +49,9 @@
     "save": "Save",
     "cancel": "Cancel",
     "clearSearch": "Clear search",
-    "openCommandPalette": "Open command palette"
+    "openCommandPalette": "Open command palette",
+    "showSidebar": "Show sidebar",
+    "closeSidebar": "Close sidebar"
   },
   "navigation": {
     "chat": "Chat",
@@ -115,7 +117,6 @@
     "restoreSessionError": "Error restoring session. Please try again."
   },
   "version": {
-    "updateAvailable": "Update available",
     "restartRequired": "Update installed — restart the server to apply"
   },
   "search": {

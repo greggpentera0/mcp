@@ -283,10 +283,7 @@
       "description": "了解如何使用外部 API 從您的應用程式觸發 Claude/Cursor 工作階段。",
       "viewLink": "查看 API 文件 →"
     },
-    "loading": "載入中...",
-    "version": {
-      "updateAvailable": "有可用更新：v{{version}}"
-    }
+    "loading": "載入中..."
   },
   "tasks": {
     "checking": "正在檢查 TaskMaster 安裝...",

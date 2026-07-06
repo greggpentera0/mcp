@@ -316,10 +316,7 @@
       "description": "Learn how to use the external API to trigger Claude/Cursor sessions from your applications.",
       "viewLink": "View API Documentation →"
     },
-    "loading": "Loading...",
-    "version": {
-      "updateAvailable": "Update available: v{{version}}"
-    }
+    "loading": "Loading..."
   },
   "tasks": {
     "checking": "Checking TaskMaster installation...",

@@ -1,21 +1,17 @@
-import { Settings, Sparkles, PanelLeftOpen, AlertTriangle } from 'lucide-react';
+import { Settings, PanelLeftOpen, AlertTriangle } from 'lucide-react';
 import type { TFunction } from 'i18next';
 
 type SidebarCollapsedProps = {
   onExpand: () => void;
   onShowSettings: () => void;
-  updateAvailable: boolean;
   restartRequired: boolean;
-  onShowVersionModal: () => void;
   t: TFunction;
 };
 
 export default function SidebarCollapsed({
   onExpand,
   onShowSettings,
-  updateAvailable,
   restartRequired,
-  onShowVersionModal,
   t,
 }: SidebarCollapsedProps) {
   return (
@@ -24,8 +20,8 @@ export default function SidebarCollapsed({
       <button
         onClick={onExpand}
         className="group flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-accent/80"
-        aria-label={t('common:versionUpdate.ariaLabels.showSidebar')}
-        title={t('common:versionUpdate.ariaLabels.showSidebar')}
+        aria-label={t('tooltips.showSidebar')}
+        title={t('tooltips.showSidebar')}
       >
         <PanelLeftOpen className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground" />
       </button>
@@ -52,19 +48,6 @@ export default function SidebarCollapsed({
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
         </div>
-      )}
-
-      {/* Update indicator */}
-      {updateAvailable && (
-        <button
-          onClick={onShowVersionModal}
-          className="relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-accent/80"
-          aria-label={t('common:versionUpdate.ariaLabels.updateAvailable')}
-          title={t('common:versionUpdate.ariaLabels.updateAvailable')}
-        >
-          <Sparkles className="h-4 w-4 text-blue-500" />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
-        </button>
       )}
     </div>
   );

@@ -13,6 +13,8 @@ HEALTH_CHECK_ATTEMPTS="30"
 HEALTH_CHECK_INTERVAL_SECONDS="1"
 CURL_TIMEOUT_SECONDS="2"
 OPEN_DELAY_SECONDS="3"
+PROCESS_STOP_ATTEMPTS="25"
+PROCESS_STOP_INTERVAL_SECONDS="0.2"
 SYSTEMD_SERVICE_NAME="cloudcli-mcp.service"
 LAUNCHD_LABEL="com.mcp-playground.local"
 NATIVE_PACKAGES=(better-sqlite3 node-pty bcrypt sharp)
@@ -816,12 +818,156 @@ open_url_when_ready() {
   fi
 }
 
+port_listener_pids() {
+  local port="$1"
+
+  if command_exists lsof; then
+    { lsof -nP -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true; } | sort -u
+    return 0
+  fi
+
+  if command_exists fuser; then
+    { fuser -n tcp "$port" 2>/dev/null || true; } | tr ' ' '\n' | sed '/^[[:space:]]*$/d' | sort -u
+    return 0
+  fi
+
+  print_warn "lsof or fuser is required to stop existing listeners on port $port."
+}
+
+process_cwd() {
+  local pid="$1"
+
+  if [[ -e "/proc/$pid/cwd" ]]; then
+    readlink "/proc/$pid/cwd" 2>/dev/null || true
+    return 0
+  fi
+
+  if command_exists lsof; then
+    { lsof -a -p "$pid" -d cwd -Fn 2>/dev/null || true; } | sed -n 's/^n//p' | sed -n '1p'
+  fi
+}
+
+process_args() {
+  local pid="$1"
+
+  ps -p "$pid" -o args= 2>/dev/null || true
+}
+
+process_command() {
+  local pid="$1"
+
+  ps -p "$pid" -o comm= 2>/dev/null | sed -n '1p' || true
+}
+
+is_repo_process() {
+  local pid="$1"
+  local cwd
+  local args
+
+  cwd="$(process_cwd "$pid" || true)"
+  args="$(process_args "$pid")"
+
+  case "$cwd" in
+    "$REPO_ROOT"|"$REPO_ROOT"/*)
+      return 0
+      ;;
+  esac
+
+  case "$args" in
+    *"$REPO_ROOT"*)
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+wait_for_process_exit() {
+  local pid="$1"
+  local attempt="1"
+
+  while [[ "$attempt" -le "$PROCESS_STOP_ATTEMPTS" ]]; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+
+    sleep "$PROCESS_STOP_INTERVAL_SECONDS"
+    attempt="$((attempt + 1))"
+  done
+
+  return 1
+}
+
+stop_process() {
+  local pid="$1"
+  local port="$2"
+  local command_name
+
+  if ! kill -0 "$pid" 2>/dev/null; then
+    return 0
+  fi
+
+  command_name="$(process_command "$pid")"
+  command_name="${command_name:-process}"
+  print_step "Stopping previous MCP Playground listener on port $port: pid $pid ($command_name)"
+
+  kill "$pid" 2>/dev/null || true
+  if wait_for_process_exit "$pid"; then
+    return 0
+  fi
+
+  print_warn "pid $pid did not stop after SIGTERM; sending SIGKILL."
+  kill -KILL "$pid" 2>/dev/null || true
+  wait_for_process_exit "$pid" || fail "pid $pid is still running after SIGKILL."
+}
+
+stop_previous_listeners_for_port() {
+  local label="$1"
+  local port="$2"
+  local pid
+  local stopped_any="false"
+  local remaining=()
+
+  [[ -n "$port" ]] || return 0
+
+  while IFS= read -r pid; do
+    [[ -n "$pid" ]] || continue
+    if is_repo_process "$pid"; then
+      stop_process "$pid" "$port"
+      stopped_any="true"
+    else
+      remaining+=("$pid")
+    fi
+  done < <(port_listener_pids "$port")
+
+  if [[ "$stopped_any" == "true" ]]; then
+    print_step "Cleared previous MCP Playground ${label} listener on port $port"
+  fi
+
+  if [[ "${#remaining[@]}" -gt 0 ]]; then
+    print_warn "${label} port $port also has non-MCP listener pid(s): ${remaining[*]}"
+  fi
+}
+
+stop_previous_dev_instance() {
+  local server_port
+  local vite_port
+
+  server_port="$(env_value SERVER_PORT "$DEFAULT_SERVER_PORT")"
+  vite_port="$(env_value VITE_PORT "$DEFAULT_VITE_PORT")"
+
+  stop_previous_listeners_for_port "backend" "$server_port"
+  stop_previous_listeners_for_port "frontend" "$vite_port"
+}
+
 start_dev_server() {
   local ui_url
   local health_url
 
   ui_url="$(frontend_url)"
   health_url="$(backend_health_url)"
+
+  stop_previous_dev_instance
 
   print_step "Starting development server"
   print_step "Frontend: ${ui_url}"

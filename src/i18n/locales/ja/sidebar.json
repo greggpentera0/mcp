@@ -48,7 +48,9 @@
     "activeSessionIndicator": "最近アクティブなセッション（過去10分以内）",
     "save": "保存",
     "cancel": "キャンセル",
-    "openCommandPalette": "コマンドパレットを開く"
+    "openCommandPalette": "コマンドパレットを開く",
+    "showSidebar": "サイドバーを表示",
+    "closeSidebar": "サイドバーを閉じる"
   },
   "navigation": {
     "chat": "チャット",
@@ -114,7 +116,6 @@
     "restoreSessionError": "セッションの復元でエラーが発生しました。もう一度お試しください。"
   },
   "version": {
-    "updateAvailable": "アップデートあり",
     "restartRequired": "更新が適用されていません。サーバーを再起動してください"
   },
   "deleteConfirmation": {

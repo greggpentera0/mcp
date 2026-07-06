@@ -49,7 +49,9 @@
     "save": "Сохранить",
     "cancel": "Отмена",
     "clearSearch": "Очистить поиск",
-    "openCommandPalette": "Открыть палитру команд"
+    "openCommandPalette": "Открыть палитру команд",
+    "showSidebar": "Показать боковую панель",
+    "closeSidebar": "Закрыть боковую панель"
   },
   "navigation": {
     "chat": "Чат",
@@ -115,7 +117,6 @@
     "restoreSessionError": "Ошибка при восстановлении сеанса. Попробуйте снова."
   },
   "version": {
-    "updateAvailable": "Доступно обновление",
     "restartRequired": "Обновление установлено — перезапустите сервер для применения"
   },
   "search": {

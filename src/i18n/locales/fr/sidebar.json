@@ -49,7 +49,9 @@
     "save": "Enregistrer",
     "cancel": "Annuler",
     "clearSearch": "Effacer la recherche",
-    "openCommandPalette": "Ouvrir la palette de commandes"
+    "openCommandPalette": "Ouvrir la palette de commandes",
+    "showSidebar": "Afficher la barre latérale",
+    "closeSidebar": "Masquer la barre latérale"
   },
   "navigation": {
     "chat": "Chat",
@@ -115,7 +117,6 @@
     "restoreSessionError": "Erreur lors de la restauration de la session. Veuillez réessayer."
   },
   "version": {
-    "updateAvailable": "Mise à jour disponible",
     "restartRequired": "Mise à jour installée — redémarrez le serveur pour l'appliquer"
   },
   "search": {

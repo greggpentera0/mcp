@@ -48,7 +48,9 @@
     "activeSessionIndicator": "최근 활성 세션 (지난 10분)",
     "save": "저장",
     "cancel": "취소",
-    "openCommandPalette": "명령 팔레트 열기"
+    "openCommandPalette": "명령 팔레트 열기",
+    "showSidebar": "사이드바 표시",
+    "closeSidebar": "사이드바 닫기"
   },
   "navigation": {
     "chat": "채팅",
@@ -114,7 +116,6 @@
     "restoreSessionError": "세션 복원 오류. 다시 시도해주세요."
   },
   "version": {
-    "updateAvailable": "업데이트 가능",
     "restartRequired": "업데이트가 설치됨 — 적용하려면 서버를 재시작하세요"
   },
   "deleteConfirmation": {

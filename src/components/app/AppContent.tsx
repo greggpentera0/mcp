@@ -49,7 +49,7 @@ export default function AppContent() {
 function AppContentInner() {
   const navigate = useNavigate();
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'sidebar']);
   const { isMobile } = useDeviceSettings({ trackPWA: false });
   const { ws, sendMessage, subscribe } = useWebSocket();
 
@@ -212,7 +212,7 @@ function AppContentInner() {
               event.stopPropagation();
               setSidebarOpen(false);
             }}
-            aria-label={t('versionUpdate.ariaLabels.closeSidebar')}
+            aria-label={t('sidebar:tooltips.closeSidebar')}
           />
           <div
             className={`relative h-full w-[85vw] max-w-sm transform border-r border-border/40 bg-card transition-transform duration-150 ease-out sm:w-80 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'

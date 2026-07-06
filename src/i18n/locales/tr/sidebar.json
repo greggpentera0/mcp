@@ -49,7 +49,9 @@
     "save": "Kaydet",
     "cancel": "İptal",
     "clearSearch": "Aramayı temizle",
-    "openCommandPalette": "Komut paletini aç"
+    "openCommandPalette": "Komut paletini aç",
+    "showSidebar": "Kenar çubuğunu göster",
+    "closeSidebar": "Kenar çubuğunu kapat"
   },
   "navigation": {
     "chat": "Sohbet",
@@ -115,7 +117,6 @@
     "restoreSessionError": "Oturum geri yüklenirken hata oluştu. Lütfen tekrar dene."
   },
   "version": {
-    "updateAvailable": "Güncelleme mevcut",
     "restartRequired": "Güncelleme yüklendi — uygulamak için sunucuyu yeniden başlatın"
   },
   "search": {

@@ -49,7 +49,9 @@
     "save": "Salva",
     "cancel": "Annulla",
     "clearSearch": "Cancella ricerca",
-    "openCommandPalette": "Apri tavolozza comandi"
+    "openCommandPalette": "Apri tavolozza comandi",
+    "showSidebar": "Mostra barra laterale",
+    "closeSidebar": "Chiudi barra laterale"
   },
   "navigation": {
     "chat": "Chat",
@@ -115,7 +117,6 @@
     "restoreSessionError": "Errore durante il ripristino della sessione. Riprova."
   },
   "version": {
-    "updateAvailable": "Aggiornamento disponibile",
     "restartRequired": "Aggiornamento installato — riavvia il server per applicarlo"
   },
   "search": {

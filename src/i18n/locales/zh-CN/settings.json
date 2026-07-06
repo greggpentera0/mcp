@@ -283,10 +283,7 @@
       "description": "了解如何使用外部 API 从您的应用程序触发 Claude/Cursor 会话。",
       "viewLink": "查看 API 文档 →"
     },
-    "loading": "加载中...",
-    "version": {
-      "updateAvailable": "有可用更新：v{{version}}"
-    }
+    "loading": "加载中..."
   },
   "tasks": {
     "checking": "正在检查 TaskMaster 安装...",

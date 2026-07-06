@@ -48,7 +48,9 @@
     "save": "儲存",
     "cancel": "取消",
     "clearSearch": "清除搜尋",
-    "openCommandPalette": "開啟指令面板"
+    "openCommandPalette": "開啟指令面板",
+    "showSidebar": "顯示側邊欄",
+    "closeSidebar": "關閉側邊欄"
   },
   "navigation": {
     "chat": "聊天",
@@ -114,7 +116,6 @@
     "restoreSessionError": "還原工作階段時出錯，請重試。"
   },
   "version": {
-    "updateAvailable": "有可用更新",
     "restartRequired": "已安裝更新 — 請重新啟動伺服器以套用"
   },
   "search": {
