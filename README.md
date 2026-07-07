@@ -4,21 +4,6 @@
   <p>A desktop and mobile UI for <a href="https://docs.anthropic.com/en/docs/claude-code">Claude Code</a>, <a href="https://docs.cursor.com/en/cli/overview">Cursor CLI</a>, <a href="https://developers.openai.com/codex">Codex</a>, <a href="https://geminicli.com/">Gemini-CLI</a>, Antigravity CLI, and OpenCode.<br>Use it locally or remotely to view your active projects and sessions from everywhere.</p>
 </div>
 
-<p align="center">
-  <a href="https://cloudcli.ai">MCP Playground Cloud</a> · <a href="https://cloudcli.ai/docs">Documentation</a> · <a href="https://discord.gg/buxwujPNRE">Discord</a> · <a href="https://github.com/siteboon/claudecodeui/issues">Bug Reports</a> · <a href="CONTRIBUTING.md">Contributing</a>
-</p>
-
-<p align="center">
-  <a href="https://cloudcli.ai"><img src="https://img.shields.io/badge/☁️_MCP Playground_Cloud-Try_Now-0066FF?style=for-the-badge" alt="MCP Playground Cloud"></a>
-  <a href="https://discord.gg/buxwujPNRE"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join our Discord"></a>
-  <br><br>
-  <a href="https://trendshift.io/repositories/15586" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15586" alt="siteboon%2Fclaudecodeui | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-</p>
-
-<div align="right"><i><b>English</b> · <a href="./README.ru.md">Русский</a> · <a href="./README.de.md">Deutsch</a> · <a href="./README.ko.md">한국어</a> · <a href="./README.zh-CN.md">简体中文</a> · <a href="./README.zh-TW.md">繁體中文</a> · <a href="./README.ja.md">日本語</a> · <a href="./README.tr.md">Türkçe</a></i></div>
-
----
-
 ## Screenshots
 
 <div align="center">
@@ -68,44 +53,29 @@
 
 ## Quick Start
 
-### MCP Playground Cloud (Recommended)
+##### macOS/Linux Launcher
 
-The fastest way to get started — no local setup required. Get a fully managed, containerized development environment accessible from the web, mobile app, API, or your favorite IDE.
-
-**[Get started with MCP Playground Cloud](https://cloudcli.ai)**
-
-### Desktop App
-
-Download the latest macOS or Windows desktop app from the **[GitHub Releases](https://github.com/siteboon/claudecodeui/releases)** page.
-
-Use the desktop app to open MCP Playground Cloud environments, switch between local and remote workspaces, copy mobile/browser URLs, and keep Local MCP Playground available from your menu bar or tray. To work locally, choose **Local MCP Playground** in the desktop app; it will use your running local server or start one for you.
-
-### Self-Hosted (Open source)
-
-#### npm
-
-Try MCP Playground UI instantly with **npx** (requires **Node.js** v22, matching `.nvmrc`):
-
+App Launcher:
+```bash
+cd /path/to/mcp
+./launch.sh
 ```
-npx @cloudcli-ai/cloudcli
-```
+Navigate to http://<laptop-ip>:5111
 
-Or install **globally** for regular use:
-
+Install as a Service:
+```bash
+cd /path/to/mcp
+./install.sh
 ```
-npm install -g @cloudcli-ai/cloudcli
-cloudcli
+Navigate to http://<laptop-ip>:5111
+
+Install Local AI Models for opencode/offline data usage:
+```bash
+cd /path/to/mcp
+./local-ai.sh
 ```
 
-Open `http://localhost:3001` — all your existing sessions are discovered automatically.
-
-Visit the **[documentation →](https://cloudcli.ai/docs)** for full configuration options, PM2, remote server setup and more.
-
-#### Local Development From Source
-
-Run from this repository when you want the host machine to provide the agent CLIs, auth stores, MCP config, and local model services.
-
-Use Node.js 22. Newer majors such as Node.js 26 can install packages but fail at runtime when native modules such as `better-sqlite3` were built for a different Node ABI.
+## Detailed Starting Guides:
 
 ##### macOS/Linux Launcher
 
@@ -353,16 +323,6 @@ launchctl print gui/$(id -u)/com.mcp-playground.local
 tail -f /tmp/mcp-playground.err.log
 ```
 
-#### Docker Sandboxes (Experimental)
-
-Run agents in isolated sandboxes with hypervisor-level isolation. Starts Claude Code by default. Requires the [`sbx` CLI](https://docs.docker.com/ai/sandboxes/get-started/).
-
-```
-npx @cloudcli-ai/cloudcli@latest sandbox ~/my-project
-```
-
-Supports Claude Code, Codex, and Gemini CLI. See the [sandbox docs](docker/) for setup and advanced options.
-
 
 ---
 
@@ -477,23 +437,6 @@ Yes, for self-hosted. MCP Playground UI reads from and writes to the same `~/.cl
 
 </details>
 
----
-
-## Community & Support
-
-- **[Documentation](https://cloudcli.ai/docs)** — installation, configuration, features, and troubleshooting
-- **[Discord](https://discord.gg/buxwujPNRE)** — get help and connect with other users
-- **[GitHub Issues](https://github.com/siteboon/claudecodeui/issues)** — bug reports and feature requests
-- **[Contributing Guide](CONTRIBUTING.md)** — how to contribute to the project
-
-## License
-
-GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later) — see [LICENSE](LICENSE) for the full text, including additional terms under Section 7.
-
-This project is open source and free to use, modify, and distribute under the AGPL-3.0-or-later license. If you modify this software and run it as a network service, you must make your modified source code available to users of that service.
-
-MCP Playground UI  - (https://cloudcli.ai).
-
 ## Acknowledgments
 
 ### Built With
@@ -508,11 +451,6 @@ MCP Playground UI  - (https://cloudcli.ai).
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
 - **[CodeMirror](https://codemirror.net/)** - Advanced code editor
 - **[TaskMaster AI](https://github.com/eyaltoledano/claude-task-master)** *(Optional)* - AI-powered project management and task planning
-
-
-### Sponsors
-- [Siteboon - AI powered website builder](https://siteboon.ai)
----
 
 <div align="center">
   <strong>Made with care for the Claude Code, Cursor, Codex, Gemini, Antigravity, and OpenCode community.</strong>

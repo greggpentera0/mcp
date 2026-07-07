@@ -20,7 +20,7 @@
 </div>
 
 <p align="center">
-  <a href="https://cloudcli.ai">MCP Playground Cloud</a> · <a href="https://cloudcli.ai/docs">Documentation</a> · <a href="https://discord.gg/buxwujPNRE">Discord</a> · <a href="https://github.com/siteboon/claudecodeui/issues">Bug Reports</a> · <a href="https://github.com/siteboon/claudecodeui/blob/main/CONTRIBUTING.md">Contributing</a>
+  <a href="https://cloudcli.ai">MCP Playground Cloud</a> · <a href="https://cloudcli.ai/docs">Documentation</a> · <a href="https://discord.gg/buxwujPNRE">Discord</a> · <a href="https://github.com/siteboon/claudecodeui/issues">Bug Reports</a> · <a href="https://github.com/siteboon/claudecodeui/blob/main/docs/CONTRIBUTING.md">Contributing</a>
 </p>
 
 <p align="center">
@@ -215,7 +215,7 @@ Yes, for self-hosted. MCP Playground UI reads from and writes to the same `~/.cl
 - **[Documentation](https://cloudcli.ai/docs)** — installation, configuration, features, and troubleshooting
 - **[Discord](https://discord.gg/buxwujPNRE)** — get help and connect with other users
 - **[GitHub Issues](https://github.com/siteboon/claudecodeui/issues)** — bug reports and feature requests
-- **[Contributing Guide](https://github.com/siteboon/claudecodeui/blob/main/CONTRIBUTING.md)** — how to contribute to the project
+- **[Contributing Guide](https://github.com/siteboon/claudecodeui/blob/main/docs/CONTRIBUTING.md)** — how to contribute to the project
 
 ## License
 

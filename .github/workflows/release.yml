@@ -141,7 +141,7 @@ jobs:
           if [ -n "${{ inputs.release_name }}" ]; then
             ARGS="$ARGS --github.releaseName=\"${{ inputs.release_name }}\""
           fi
-          npx release-it $ARGS
+          npx release-it --config config/release-it.json $ARGS
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

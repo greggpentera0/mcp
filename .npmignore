@@ -4,11 +4,9 @@
 .env*
 .gitignore
 .nvmrc
-.release-it.json
-release.sh
-postcss.config.js
-vite.config.js
-tailwind.config.js
+config/
+docs/
+scripts/release/
 
 # Database files
 authdb/

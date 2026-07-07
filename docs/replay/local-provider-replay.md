@@ -663,7 +663,7 @@ Documentation and env:
 ```text
 .env.example
 README.md
-instructions-2.md
+docs/replay/local-provider-replay.md
 ```
 
 Do not include alternate runtime files in this replay checklist.

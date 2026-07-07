@@ -4,7 +4,7 @@
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "baseUrl": ".",
+    "baseUrl": "..",
     "paths": {
       // The frontend keeps "@" mapped to /src.
       // The backend gets its own "@" mapping in server/tsconfig.json so both sides can use
@@ -24,5 +24,5 @@
     "types": ["vite/client"],
     "ignoreDeprecations": "5.0"
   },
-  "include": ["src", "shared", "vite.config.js"]
+  "include": ["../src", "../shared", "vite.config.js"]
 }

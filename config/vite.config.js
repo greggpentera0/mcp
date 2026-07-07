@@ -1,34 +1,37 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { getConnectableHost, normalizeLoopbackHost } from './shared/networkHosts.js'
+import { getConnectableHost, normalizeLoopbackHost } from '../shared/networkHosts.js'
+
+const repoRoot = fileURLToPath(new URL('..', import.meta.url))
 
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, repoRoot, '')
 
   const configuredHost = env.HOST || '0.0.0.0'
-  // if the host is not a loopback address, it should be used directly. 
-  // This allows the vite server to EXPOSE all interfaces when the host 
-  // is set to '0.0.0.0' or '::', while still using 'localhost' for browser 
-  // URLs and proxy targets.
+  // Non-loopback hosts are used directly so Vite can expose all interfaces
+  // for 0.0.0.0 or :: while still using localhost-compatible proxy targets.
   const host = normalizeLoopbackHost(configuredHost)
   
   const proxyHost = getConnectableHost(configuredHost)
-  // TODO: Remove support for legacy PORT variables in all locations in a future major release, leaving only SERVER_PORT.
+  // PORT remains accepted for backward compatibility; SERVER_PORT is canonical.
   const serverPort = env.SERVER_PORT || env.PORT || 3001
 
   return {
+    root: repoRoot,
     plugins: [react()],
+    css: {
+      postcss: './config/postcss.config.js'
+    },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('../src', import.meta.url))
       }
     },
     server: {
       host,
       allowedHosts: true,
-      port: parseInt(env.VITE_PORT) || 5173,
+      port: Number.parseInt(env.VITE_PORT, 10) || 5173,
       proxy: {
         '/api': `http://${proxyHost}:${serverPort}`,
         '/ws': {

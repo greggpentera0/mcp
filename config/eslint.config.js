@@ -21,7 +21,7 @@ export default tseslint.config(
       react,
       "react-hooks": reactHooks, // for following React rules such as dependencies in hooks, keys in lists, etc.
       "react-refresh": reactRefresh, // for Vite HMR compatibility
-      "import-x": importX, // for import order/sorting. It also detercts circular dependencies and duplicate imports.
+      "import-x": importX, // for import order/sorting. It also detects circular dependencies and duplicate imports.
       tailwindcss, // for detecting invalid Tailwind classnames and enforcing classname order
       "unused-imports": unusedImports, // for detecting unused imports
     },
@@ -35,6 +35,9 @@ export default tseslint.config(
     },
     settings: {
       react: { version: "detect" },
+      tailwindcss: {
+        config: "config/tailwind.config.js",
+      },
     },
     rules: {
       // --- Unused imports/vars ---

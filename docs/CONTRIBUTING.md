@@ -147,10 +147,10 @@ npm run release -- minor  # minor release
 This automatically:
 - Bumps the version based on commit types (`feat` = minor, `fix` = patch)
 - Generates categorized release notes
-- Updates `CHANGELOG.md`
+- Updates [CHANGELOG.md](CHANGELOG.md)
 - Creates a git tag and GitHub Release
 - Publishes to npm
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the [AGPL-3.0-or-later License](LICENSE), including the additional terms specified in Section 7 of the LICENSE file.
+By contributing, you agree that your contributions will be licensed under the [AGPL-3.0-or-later License](../LICENSE), including the additional terms specified in Section 7 of the LICENSE file.

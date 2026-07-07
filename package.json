@@ -15,7 +15,7 @@
     "public/api-docs.html",
     "dist/",
     "dist-server/",
-    "scripts/",
+    "scripts/fix-node-pty.js",
     "README.md"
   ],
   "homepage": "https://cloudcli.ai",
@@ -31,7 +31,7 @@
     "server": "node dist-server/server/index.js",
     "server:dev": "tsx --tsconfig server/tsconfig.json server/index.js",
     "server:dev-watch": "tsx watch --tsconfig server/tsconfig.json server/index.js",
-    "client": "vite",
+    "client": "vite --config config/vite.config.js",
     "desktop": "electron electron/main.js",
     "desktop:dev": "cross-env ELECTRON_DEV_URL=http://127.0.0.1:5173 electron electron/main.js",
     "desktop:stage": "node scripts/release/prepare-desktop-app.js",
@@ -41,15 +41,15 @@
     "server:bundle": "npm run build && node scripts/release/build-server-bundle.js",
     "desktop:icon:mac": "node electron/scripts/generate-macos-icon.js",
     "build": "npm run build:client && npm run build:server",
-    "build:client": "vite build",
+    "build:client": "vite build --config config/vite.config.js",
     "prebuild:server": "node -e \"require('node:fs').rmSync('dist-server', { recursive: true, force: true })\"",
     "build:server": "tsc -p server/tsconfig.json && tsc-alias -p server/tsconfig.json",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p server/tsconfig.json",
-    "lint": "eslint src/ server/",
-    "lint:fix": "eslint src/ server/ --fix",
+    "preview": "vite preview --config config/vite.config.js",
+    "typecheck": "tsc --noEmit -p config/tsconfig.json && tsc --noEmit -p server/tsconfig.json",
+    "lint": "eslint --config config/eslint.config.js src/ server/",
+    "lint:fix": "eslint --config config/eslint.config.js src/ server/ --fix",
     "start": "npm run build && npm run server",
-    "release": "./release.sh",
+    "release": "./scripts/release/release.sh",
     "prepublishOnly": "npm run build",
     "postinstall": "node scripts/fix-node-pty.js",
     "prepare": "husky"
@@ -237,8 +237,8 @@
     "vite": "^7.0.4"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx,js,jsx}": "eslint",
-    "server/**/*.{js,ts}": "eslint"
+    "src/**/*.{ts,tsx,js,jsx}": "eslint --config config/eslint.config.js",
+    "server/**/*.{js,ts}": "eslint --config config/eslint.config.js"
   },
   "optionalDependencies": {
     "@nut-tree-fork/nut-js": "^4.2.6",
