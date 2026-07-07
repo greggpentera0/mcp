@@ -995,6 +995,28 @@ write_systemd_env_line() {
   printf 'Environment="%s=%s"\n' "$key" "$(systemd_escape "$value")"
 }
 
+write_systemd_path_line() {
+  local key="$1"
+  local value="$2"
+
+  printf '%s=%s\n' "$key" "$(systemd_escape "$value")"
+}
+
+write_systemd_env_file_line() {
+  local file="$1"
+
+  printf 'EnvironmentFile=%s\n' "$(systemd_escape "$file")"
+}
+
+write_systemd_env_override_if_set() {
+  local key="$1"
+  local value="${!key-}"
+
+  if [[ -n "$value" ]]; then
+    write_systemd_env_line "$key" "$value"
+  fi
+}
+
 xml_escape() {
   printf '%s' "$1" |
     sed \
@@ -1012,6 +1034,16 @@ write_plist_string_entry() {
 
   printf '%s<key>%s</key>\n' "$indent" "$(xml_escape "$key")"
   printf '%s<string>%s</string>\n' "$indent" "$(xml_escape "$value")"
+}
+
+write_plist_env_override_if_set() {
+  local indent="$1"
+  local key="$2"
+  local value="${!key-}"
+
+  if [[ -n "$value" ]]; then
+    write_plist_string_entry "$indent" "$key" "$value"
+  fi
 }
 
 service_path_value() {
@@ -1034,37 +1066,11 @@ install_linux_service() {
   local node_path
   local service_dir
   local service_file
-  local server_port
-  local vite_port
-  local host
-  local disable_auth
-  local vite_disable_auth
-  local claude_cli_path
-  local cursor_agent_path
-  local cursor_cli_path
-  local gemini_path
-  local antigravity_path
-  local opencode_path
-  local opencode_cli_path
-  local opencode_config
 
   node_bin="$(command -v node)"
   node_path="$(service_path_value "$node_bin")"
   service_dir="$HOME/.config/systemd/user"
   service_file="$service_dir/$SYSTEMD_SERVICE_NAME"
-  server_port="$(env_value SERVER_PORT "$DEFAULT_SERVER_PORT")"
-  vite_port="$(env_value VITE_PORT "$DEFAULT_VITE_PORT")"
-  host="$(env_value HOST "$DEFAULT_HOST")"
-  disable_auth="$(env_value DISABLE_AUTH "true")"
-  vite_disable_auth="$(env_value VITE_DISABLE_AUTH "true")"
-  claude_cli_path="$(env_optional_value CLAUDE_CLI_PATH)"
-  cursor_agent_path="$(env_optional_value CURSOR_AGENT_PATH)"
-  cursor_cli_path="$(env_optional_value CURSOR_CLI_PATH)"
-  gemini_path="$(env_optional_value GEMINI_PATH)"
-  antigravity_path="$(env_value ANTIGRAVITY_PATH "agy")"
-  opencode_path="$(env_value OPENCODE_PATH "opencode")"
-  opencode_cli_path="$(env_optional_value OPENCODE_CLI_PATH)"
-  opencode_config="$(env_optional_value OPENCODE_CONFIG)"
 
   mkdir -p "$service_dir"
 
@@ -1074,33 +1080,22 @@ install_linux_service() {
     printf 'After=network-online.target\n\n'
     printf '[Service]\n'
     printf 'Type=simple\n'
-    printf 'WorkingDirectory=%s\n' "$(systemd_quote "$REPO_ROOT")"
+    write_systemd_path_line WorkingDirectory "$REPO_ROOT"
+    write_systemd_env_file_line "$REPO_ROOT/.env"
     write_systemd_env_line PATH "$node_path"
-    write_systemd_env_line SERVER_PORT "$server_port"
-    write_systemd_env_line VITE_PORT "$vite_port"
-    write_systemd_env_line HOST "$host"
-    write_systemd_env_line DISABLE_AUTH "$disable_auth"
-    write_systemd_env_line VITE_DISABLE_AUTH "$vite_disable_auth"
-    if [[ -n "$claude_cli_path" ]]; then
-      write_systemd_env_line CLAUDE_CLI_PATH "$claude_cli_path"
-    fi
-    if [[ -n "$cursor_agent_path" ]]; then
-      write_systemd_env_line CURSOR_AGENT_PATH "$cursor_agent_path"
-    fi
-    if [[ -n "$cursor_cli_path" ]]; then
-      write_systemd_env_line CURSOR_CLI_PATH "$cursor_cli_path"
-    fi
-    if [[ -n "$gemini_path" ]]; then
-      write_systemd_env_line GEMINI_PATH "$gemini_path"
-    fi
-    write_systemd_env_line ANTIGRAVITY_PATH "$antigravity_path"
-    write_systemd_env_line OPENCODE_PATH "$opencode_path"
-    if [[ -n "$opencode_cli_path" ]]; then
-      write_systemd_env_line OPENCODE_CLI_PATH "$opencode_cli_path"
-    fi
-    if [[ -n "$opencode_config" ]]; then
-      write_systemd_env_line OPENCODE_CONFIG "$opencode_config"
-    fi
+    write_systemd_env_override_if_set SERVER_PORT
+    write_systemd_env_override_if_set VITE_PORT
+    write_systemd_env_override_if_set HOST
+    write_systemd_env_override_if_set DISABLE_AUTH
+    write_systemd_env_override_if_set VITE_DISABLE_AUTH
+    write_systemd_env_override_if_set CLAUDE_CLI_PATH
+    write_systemd_env_override_if_set CURSOR_AGENT_PATH
+    write_systemd_env_override_if_set CURSOR_CLI_PATH
+    write_systemd_env_override_if_set GEMINI_PATH
+    write_systemd_env_override_if_set ANTIGRAVITY_PATH
+    write_systemd_env_override_if_set OPENCODE_PATH
+    write_systemd_env_override_if_set OPENCODE_CLI_PATH
+    write_systemd_env_override_if_set OPENCODE_CONFIG
     printf 'ExecStart=%s %s\n' \
       "$(systemd_quote "$node_bin")" \
       "$(systemd_quote "$REPO_ROOT/dist-server/server/index.js")"
@@ -1136,38 +1131,12 @@ install_macos_service() {
   local plist_dir
   local plist_file
   local log_dir
-  local server_port
-  local vite_port
-  local host
-  local disable_auth
-  local vite_disable_auth
-  local claude_cli_path
-  local cursor_agent_path
-  local cursor_cli_path
-  local gemini_path
-  local antigravity_path
-  local opencode_path
-  local opencode_cli_path
-  local opencode_config
 
   node_bin="$(command -v node)"
   node_path="$(service_path_value "$node_bin")"
   plist_dir="$HOME/Library/LaunchAgents"
   plist_file="$plist_dir/${LAUNCHD_LABEL}.plist"
   log_dir="$HOME/Library/Logs/mcp-playground"
-  server_port="$(env_value SERVER_PORT "$DEFAULT_SERVER_PORT")"
-  vite_port="$(env_value VITE_PORT "$DEFAULT_VITE_PORT")"
-  host="$(env_value HOST "$DEFAULT_HOST")"
-  disable_auth="$(env_value DISABLE_AUTH "true")"
-  vite_disable_auth="$(env_value VITE_DISABLE_AUTH "true")"
-  claude_cli_path="$(env_optional_value CLAUDE_CLI_PATH)"
-  cursor_agent_path="$(env_optional_value CURSOR_AGENT_PATH)"
-  cursor_cli_path="$(env_optional_value CURSOR_CLI_PATH)"
-  gemini_path="$(env_optional_value GEMINI_PATH)"
-  antigravity_path="$(env_value ANTIGRAVITY_PATH "agy")"
-  opencode_path="$(env_value OPENCODE_PATH "opencode")"
-  opencode_cli_path="$(env_optional_value OPENCODE_CLI_PATH)"
-  opencode_config="$(env_optional_value OPENCODE_CONFIG)"
 
   mkdir -p "$plist_dir" "$log_dir"
 
@@ -1189,31 +1158,19 @@ PLIST
     printf '    <key>EnvironmentVariables</key>\n'
     printf '    <dict>\n'
     write_plist_string_entry "      " "PATH" "$node_path"
-    write_plist_string_entry "      " "SERVER_PORT" "$server_port"
-    write_plist_string_entry "      " "VITE_PORT" "$vite_port"
-    write_plist_string_entry "      " "HOST" "$host"
-    write_plist_string_entry "      " "DISABLE_AUTH" "$disable_auth"
-    write_plist_string_entry "      " "VITE_DISABLE_AUTH" "$vite_disable_auth"
-    if [[ -n "$claude_cli_path" ]]; then
-      write_plist_string_entry "      " "CLAUDE_CLI_PATH" "$claude_cli_path"
-    fi
-    if [[ -n "$cursor_agent_path" ]]; then
-      write_plist_string_entry "      " "CURSOR_AGENT_PATH" "$cursor_agent_path"
-    fi
-    if [[ -n "$cursor_cli_path" ]]; then
-      write_plist_string_entry "      " "CURSOR_CLI_PATH" "$cursor_cli_path"
-    fi
-    if [[ -n "$gemini_path" ]]; then
-      write_plist_string_entry "      " "GEMINI_PATH" "$gemini_path"
-    fi
-    write_plist_string_entry "      " "ANTIGRAVITY_PATH" "$antigravity_path"
-    write_plist_string_entry "      " "OPENCODE_PATH" "$opencode_path"
-    if [[ -n "$opencode_cli_path" ]]; then
-      write_plist_string_entry "      " "OPENCODE_CLI_PATH" "$opencode_cli_path"
-    fi
-    if [[ -n "$opencode_config" ]]; then
-      write_plist_string_entry "      " "OPENCODE_CONFIG" "$opencode_config"
-    fi
+    write_plist_env_override_if_set "      " SERVER_PORT
+    write_plist_env_override_if_set "      " VITE_PORT
+    write_plist_env_override_if_set "      " HOST
+    write_plist_env_override_if_set "      " DISABLE_AUTH
+    write_plist_env_override_if_set "      " VITE_DISABLE_AUTH
+    write_plist_env_override_if_set "      " CLAUDE_CLI_PATH
+    write_plist_env_override_if_set "      " CURSOR_AGENT_PATH
+    write_plist_env_override_if_set "      " CURSOR_CLI_PATH
+    write_plist_env_override_if_set "      " GEMINI_PATH
+    write_plist_env_override_if_set "      " ANTIGRAVITY_PATH
+    write_plist_env_override_if_set "      " OPENCODE_PATH
+    write_plist_env_override_if_set "      " OPENCODE_CLI_PATH
+    write_plist_env_override_if_set "      " OPENCODE_CONFIG
     printf '    </dict>\n'
     printf '    <key>RunAtLoad</key>\n'
     printf '    <true/>\n'

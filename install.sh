@@ -19,8 +19,11 @@ PROCESS_STOP_INTERVAL_SECONDS="0.2"
 LOG_DIR=""
 VALIDATION_PID=""
 ALLOW_NON_UBUNTU="false"
-AUTH_MODE="auth"
+AUTH_MODE="env"
 LAUNCH_SETUP_ARGS=()
+HOST_ARG_SET="false"
+SERVER_PORT_ARG_SET="false"
+VITE_PORT_ARG_SET="false"
 
 print_step() {
   printf '[mcp-playground-install] %s\n' "$*"
@@ -59,6 +62,7 @@ Default behavior:
   - Starts ./launch.sh --dev in a background validation process.
   - Waits for backend health and frontend HTTP checks.
   - Prints URLs for the user to test.
+  - Uses .env for host, ports, and auth unless explicitly overridden.
   - Installs ./launch.sh --service only after the user confirms access.
 
 Options:
@@ -68,7 +72,7 @@ Options:
   --backend-port PORT    Alias for --server-port.
   --vite-port PORT       Frontend dev validation port.
   --frontend-port PORT   Alias for --vite-port.
-  --auth                 Enable login/setup. This is the default.
+  --auth                 Enable login/setup, overriding .env auth flags.
   --local-auth-disabled  Bind to 127.0.0.1 and disable username/password auth.
   --no-install           Pass through to launch.sh.
   --no-agent-cli-install Pass through to launch.sh.
@@ -158,16 +162,19 @@ parse_args() {
       --host)
         require_arg "$1" "${2-}"
         HOST_VALUE="$2"
+        HOST_ARG_SET="true"
         shift 2
         ;;
       --server-port|--backend-port)
         require_arg "$1" "${2-}"
         SERVER_PORT_VALUE="$2"
+        SERVER_PORT_ARG_SET="true"
         shift 2
         ;;
       --vite-port|--frontend-port)
         require_arg "$1" "${2-}"
         VITE_PORT_VALUE="$2"
+        VITE_PORT_ARG_SET="true"
         shift 2
         ;;
       --auth)
@@ -177,6 +184,7 @@ parse_args() {
       --local-auth-disabled)
         AUTH_MODE="local-auth-disabled"
         HOST_VALUE="127.0.0.1"
+        HOST_ARG_SET="true"
         shift
         ;;
       --no-install|--no-agent-cli-install|--upgrade-agent-clis|--strict-agent-clis|--reinstall|--rebuild-native)
@@ -274,15 +282,24 @@ service_url() {
 }
 
 build_launch_args() {
-  COMMON_LAUNCH_ARGS=(
-    --server-port "$SERVER_PORT_VALUE"
-    --vite-port "$VITE_PORT_VALUE"
-  )
+  COMMON_LAUNCH_ARGS=()
+
+  if [[ "$SERVER_PORT_ARG_SET" == "true" ]]; then
+    COMMON_LAUNCH_ARGS+=(--server-port "$SERVER_PORT_VALUE")
+  fi
+
+  if [[ "$VITE_PORT_ARG_SET" == "true" ]]; then
+    COMMON_LAUNCH_ARGS+=(--vite-port "$VITE_PORT_VALUE")
+  fi
+
+  if [[ "$HOST_ARG_SET" == "true" ]]; then
+    COMMON_LAUNCH_ARGS+=(--host "$HOST_VALUE")
+  fi
 
   if [[ "$AUTH_MODE" == "local-auth-disabled" ]]; then
     COMMON_LAUNCH_ARGS+=(--local-auth-disabled)
-  else
-    COMMON_LAUNCH_ARGS+=(--host "$HOST_VALUE" --auth)
+  elif [[ "$AUTH_MODE" == "auth" ]]; then
+    COMMON_LAUNCH_ARGS+=(--auth)
   fi
 
   COMMON_LAUNCH_ARGS+=("${LAUNCH_SETUP_ARGS[@]}")

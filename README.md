@@ -202,17 +202,8 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/home/YOUR_USER/Code/mcp
+EnvironmentFile=/home/YOUR_USER/Code/mcp/.env
 Environment=PATH=/home/YOUR_USER/.local/bin:/home/YOUR_USER/.opencode/bin:/home/YOUR_USER/.nvm/versions/node/v22/bin:/usr/local/bin:/usr/bin:/bin
-Environment=SERVER_PORT=3221
-Environment=VITE_PORT=5173
-Environment=HOST=127.0.0.1
-Environment=DISABLE_AUTH=true
-Environment=VITE_DISABLE_AUTH=true
-Environment=CLAUDE_CLI_PATH=claude
-Environment=CURSOR_AGENT_PATH=cursor-agent
-Environment=GEMINI_PATH=gemini
-Environment=ANTIGRAVITY_PATH=agy
-Environment=OPENCODE_PATH=opencode
 ExecStart=/home/YOUR_USER/.nvm/versions/node/v22/bin/node dist-server/server/index.js
 Restart=on-failure
 RestartSec=5
