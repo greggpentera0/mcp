@@ -48,7 +48,7 @@ trap 'on_error "$LINENO" "$BASH_COMMAND"' ERR
 
 usage() {
   cat <<'USAGE'
-Usage: ./local-ai-installation.sh [options]
+Usage: ./local-ai.sh [options]
 
 Install Ollama, pull a local coding model, and configure OpenCode to use it.
 
@@ -59,6 +59,8 @@ Default behavior:
   - Writes opencode.json next to this script.
   - Preserves existing opencode.json settings and updates only the Ollama
     provider plus the default model fields.
+  - MCP Playground auto-detects that generated config and passes it to the
+    OpenCode CLI with OPENCODE_CONFIG.
 
 Options:
   --model MODEL              Ollama model ID to pull and configure.
@@ -432,6 +434,7 @@ print_summary() {
 [local-ai] model: ${MODEL_ID}
 [local-ai] OpenCode model id: ${PROVIDER_ID}/${MODEL_ID}
 [local-ai] config: ${CONFIG_FILE}
+[local-ai] MCP Playground will use this config automatically when launched from this app root.
 [local-ai] next command: opencode
 SUMMARY
 }

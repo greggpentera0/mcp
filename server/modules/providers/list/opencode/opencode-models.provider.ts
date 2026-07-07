@@ -4,6 +4,7 @@ import Database from 'better-sqlite3';
 import crossSpawn from 'cross-spawn';
 
 import {
+  buildOpenCodeRuntimeEnv,
   getOpenCodeExecutable,
   readOpenCodeConfigModels,
 } from '@/modules/providers/list/opencode/opencode-config.js';
@@ -248,61 +249,65 @@ const parseOpenCodeSessionModelValue = (rawModel: unknown): string | null => {
     ?? null;
 };
 
-const runOpenCodeModelsCommand = (): Promise<string> => new Promise((resolve, reject) => {
-  const openCodeProcess = spawnFunction(getOpenCodeExecutable(), ['models'], {
-    cwd: process.cwd(),
-    env: { ...process.env },
-  });
+const runOpenCodeModelsCommand = async (): Promise<string> => {
+  const openCodeEnv = await buildOpenCodeRuntimeEnv();
 
-  let stdout = '';
-  let stderr = '';
-  let settled = false;
+  return new Promise((resolve, reject) => {
+    const openCodeProcess = spawnFunction(getOpenCodeExecutable(), ['models'], {
+      cwd: process.cwd(),
+      env: openCodeEnv,
+    });
 
-  const timer = setTimeout(() => {
-    openCodeProcess.kill('SIGTERM');
-    if (!settled) {
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      openCodeProcess.kill('SIGTERM');
+      if (!settled) {
+        settled = true;
+        reject(new Error('opencode models timed out'));
+      }
+    }, OPEN_CODE_MODELS_TIMEOUT_MS);
+
+    const finish = (error: Error | null, output: string) => {
+      if (settled) {
+        return;
+      }
+
       settled = true;
-      reject(new Error('opencode models timed out'));
-    }
-  }, OPEN_CODE_MODELS_TIMEOUT_MS);
+      clearTimeout(timer);
 
-  const finish = (error: Error | null, output: string) => {
-    if (settled) {
-      return;
-    }
+      if (error) {
+        reject(error);
+        return;
+      }
 
-    settled = true;
-    clearTimeout(timer);
+      resolve(output);
+    };
 
-    if (error) {
-      reject(error);
-      return;
-    }
+    openCodeProcess.stdout?.on('data', (chunk: Buffer) => {
+      stdout += chunk.toString();
+    });
 
-    resolve(output);
-  };
+    openCodeProcess.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString();
+    });
 
-  openCodeProcess.stdout?.on('data', (chunk: Buffer) => {
-    stdout += chunk.toString();
+    openCodeProcess.on('error', (error) => {
+      finish(error instanceof Error ? error : new Error(String(error)), '');
+    });
+
+    openCodeProcess.on('close', (code) => {
+      if (code !== 0) {
+        finish(new Error(stderr.trim() || `opencode models exited with code ${code}`), '');
+        return;
+      }
+
+      finish(null, stdout);
+    });
   });
-
-  openCodeProcess.stderr?.on('data', (chunk: Buffer) => {
-    stderr += chunk.toString();
-  });
-
-  openCodeProcess.on('error', (error) => {
-    finish(error instanceof Error ? error : new Error(String(error)), '');
-  });
-
-  openCodeProcess.on('close', (code) => {
-    if (code !== 0) {
-      finish(new Error(stderr.trim() || `opencode models exited with code ${code}`), '');
-      return;
-    }
-
-    finish(null, stdout);
-  });
-});
+};
 
 export class OpenCodeProviderModels implements IProviderModels {
   async getSupportedModels(): Promise<ProviderModelsDefinition> {

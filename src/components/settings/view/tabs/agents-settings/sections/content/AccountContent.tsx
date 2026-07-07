@@ -77,6 +77,8 @@ const agentConfig: Record<AgentProvider, AgentVisualConfig> = {
 export default function AccountContent({ agent, authStatus, onLogin }: AccountContentProps) {
   const { t } = useTranslation('settings');
   const config = agentConfig[agent];
+  const isConfigFileAuth = agent === 'opencode' && authStatus.authenticated && authStatus.method === 'config_file';
+  const showLoginAction = authStatus.method !== 'api_key' && !isConfigFileAuth;
 
   return (
     <div className="space-y-6">
@@ -128,7 +130,7 @@ export default function AccountContent({ agent, authStatus, onLogin }: AccountCo
             </div>
           </div>
 
-          {authStatus.method !== 'api_key' && (
+          {showLoginAction && (
             <div className="border-t border-border/50 pt-4">
               <div className="flex items-center justify-between">
                 <div>

@@ -5,6 +5,7 @@ import crossSpawn from 'cross-spawn';
 import Database from 'better-sqlite3';
 
 import {
+  buildOpenCodeRuntimeEnv,
   buildOpenCodeNotFoundMessage,
   getOpenCodeExecutable,
 } from './modules/providers/list/opencode/opencode-config.js';
@@ -196,7 +197,7 @@ async function spawnOpenCode(command, options = {}, ws) {
       }
     };
 
-    void providerModelsService.resolveResumeModel('opencode', sessionId, model).then((resolvedModel) => {
+    void providerModelsService.resolveResumeModel('opencode', sessionId, model).then(async (resolvedModel) => {
       const args = ['run', '--format', 'json'];
       // OpenCode's `run` command owns workspace selection through `--dir`.
       // Relying on the child-process cwd alone is not enough on Linux, where
@@ -213,10 +214,11 @@ async function spawnOpenCode(command, options = {}, ws) {
       }
 
       const openCodeExecutable = getOpenCodeExecutable();
+      const openCodeEnv = await buildOpenCodeRuntimeEnv();
       opencodeProcess = spawnFunction(openCodeExecutable, args, {
         cwd: workingDir,
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env },
+        env: openCodeEnv,
       });
 
       activeOpenCodeProcesses.set(processKey, opencodeProcess);

@@ -25,6 +25,12 @@ export type ResolveOpenCodeExecutableDependencies = {
   platform?: NodeJS.Platform;
 };
 
+export type ResolveOpenCodeConfigDependencies = {
+  cwd?: typeof process.cwd;
+  env?: NodeJS.ProcessEnv;
+  homedir?: typeof os.homedir;
+};
+
 type OpenCodeConfigModelsFetchResponse = {
   ok: boolean;
   json: () => Promise<unknown>;
@@ -196,21 +202,52 @@ export const buildOpenCodeNotFoundMessage = (command: string): string => [
   `The server tried: ${command}.`,
 ].join(' ');
 
-export const resolveOpenCodeConfigCandidates = (): string[] => [
-  process.env.OPENCODE_CONFIG?.trim() || '',
-  path.join(os.homedir(), 'opencode.json'),
-  path.join(os.homedir(), '.config', 'opencode', 'opencode.json'),
-  path.join(os.homedir(), '.config', 'opencode', 'opencode.jsonc'),
-].filter(Boolean);
+export const resolveOpenCodeConfigCandidates = (
+  dependencies: ResolveOpenCodeConfigDependencies = {},
+): string[] => {
+  const deps: Required<ResolveOpenCodeConfigDependencies> = {
+    cwd: dependencies.cwd ?? process.cwd,
+    env: dependencies.env ?? process.env,
+    homedir: dependencies.homedir ?? os.homedir,
+  };
+  const configuredPath = stripWrappingQuotes(readCaseInsensitiveEnv(deps.env, 'OPENCODE_CONFIG') || '');
+  const candidates = [
+    configuredPath,
+    path.join(deps.cwd(), 'opencode.json'),
+    path.join(deps.homedir(), 'opencode.json'),
+    path.join(deps.homedir(), '.config', 'opencode', 'opencode.json'),
+    path.join(deps.homedir(), '.config', 'opencode', 'opencode.jsonc'),
+  ].filter((candidate) => Boolean(candidate.trim()));
 
-export const resolveExistingOpenCodeConfigPath = async (): Promise<string | null> => {
-  for (const filePath of resolveOpenCodeConfigCandidates()) {
+  return Array.from(new Set(candidates));
+};
+
+export const resolveExistingOpenCodeConfigPath = async (
+  dependencies: ResolveOpenCodeConfigDependencies = {},
+): Promise<string | null> => {
+  for (const filePath of resolveOpenCodeConfigCandidates(dependencies)) {
     if (await fileExists(filePath)) {
       return filePath;
     }
   }
 
   return null;
+};
+
+export const buildOpenCodeRuntimeEnv = async (
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<NodeJS.ProcessEnv> => {
+  const runtimeEnv = { ...env };
+  const configuredPath = stripWrappingQuotes(readCaseInsensitiveEnv(runtimeEnv, 'OPENCODE_CONFIG') || '');
+
+  if (!configuredPath) {
+    const configPath = await resolveExistingOpenCodeConfigPath({ env: runtimeEnv });
+    if (configPath) {
+      runtimeEnv.OPENCODE_CONFIG = configPath;
+    }
+  }
+
+  return runtimeEnv;
 };
 
 export const readOpenCodeConfigFile = async (filePath: string): Promise<Record<string, unknown>> => {
