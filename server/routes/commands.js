@@ -23,7 +23,7 @@ const MODEL_PROVIDER_LABELS = {
   codex: "Codex",
   gemini: "Gemini",
   antigravity: "Antigravity",
-  opencode: "OpenCode",
+  opencode: "OpenCode (Local)",
 };
 
 const readModelProvider = (value) => {

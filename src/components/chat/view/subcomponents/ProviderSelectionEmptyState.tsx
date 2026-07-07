@@ -29,7 +29,7 @@ const PROVIDER_META: { id: LLMProvider; name: string }[] = [
   { id: "gemini", name: "Google" },
   { id: "antigravity", name: "Antigravity" },
   { id: "cursor", name: "Cursor" },
-  { id: "opencode", name: "OpenCode" },
+  { id: "opencode", name: "OpenCode (Local)" },
 ];
 
 const MOD_KEY =
@@ -97,7 +97,7 @@ function getProviderDisplayName(p: LLMProvider) {
   if (p === "cursor") return "Cursor";
   if (p === "codex") return "Codex";
   if (p === "antigravity") return "Antigravity";
-  if (p === "opencode") return "OpenCode";
+  if (p === "opencode") return "OpenCode (Local)";
   return "Gemini";
 }
 
@@ -133,31 +133,48 @@ export default function ProviderSelectionEmptyState({
 
   const visibleProviderGroups = useMemo<ProviderGroup[]>(() => {
     const normalizedQuery = modelSearchQuery.trim().toLowerCase();
-    return PROVIDER_META.map((p) => {
-      const models = providerModelCatalog[p.id]?.OPTIONS ?? [];
+    return PROVIDER_META.flatMap((p) => {
+      const catalog = providerModelCatalog[p.id];
+      const models = catalog?.OPTIONS ?? [];
+      const providerModelsPending = providerModelsLoading && !catalog;
+
+      if (!providerModelsPending && models.length === 0) {
+        return [];
+      }
+
       if (!normalizedQuery) {
-        return {
+        return [{
           id: p.id,
           name: p.name,
           models,
-        };
+        }];
       }
 
       const providerMatches = p.name.toLowerCase().includes(normalizedQuery)
         || getProviderDisplayName(p.id).toLowerCase().includes(normalizedQuery);
-      return {
+      const matchingModels = providerMatches
+        ? models
+        : models.filter((model) => (
+            model.value.toLowerCase().includes(normalizedQuery)
+            || model.label.toLowerCase().includes(normalizedQuery)
+            || model.description?.toLowerCase().includes(normalizedQuery)
+          ));
+
+      if (!providerModelsPending && matchingModels.length === 0) {
+        return [];
+      }
+
+      if (providerModelsPending && !providerMatches && matchingModels.length === 0) {
+        return [];
+      }
+
+      return [{
         id: p.id,
         name: p.name,
-        models: providerMatches
-          ? models
-          : models.filter((model) => (
-              model.value.toLowerCase().includes(normalizedQuery)
-              || model.label.toLowerCase().includes(normalizedQuery)
-              || model.description?.toLowerCase().includes(normalizedQuery)
-            )),
-      };
-    }).filter((group) => !normalizedQuery || group.models.length > 0);
-  }, [modelSearchQuery, providerModelCatalog]);
+        models: matchingModels,
+      }];
+    });
+  }, [modelSearchQuery, providerModelCatalog, providerModelsLoading]);
 
   const nextTaskPrompt = t("tasks.nextTaskPrompt", {
     defaultValue: "Start the next task",
@@ -178,6 +195,9 @@ export default function ProviderSelectionEmptyState({
     const found = config.OPTIONS.find(
       (o: { value: string; label: string }) => o.value === currentModel,
     );
+    if (provider === "opencode") {
+      return found?.label || config.DEFAULT;
+    }
     return found?.label || currentModel;
   }, [provider, currentModel, providerModelCatalog]);
 
@@ -193,7 +213,11 @@ export default function ProviderSelectionEmptyState({
         opencodeModel,
       );
       const config = getModelConfig(providerId, providerModelCatalog);
-      return config.OPTIONS.find((o) => o.value === modelValue)?.label || modelValue || config.DEFAULT;
+      const found = config.OPTIONS.find((o) => o.value === modelValue);
+      if (providerId === "opencode") {
+        return found?.label || config.DEFAULT;
+      }
+      return found?.label || modelValue || config.DEFAULT;
     },
     [antigravityModel, claudeModel, codexModel, cursorModel, geminiModel, opencodeModel, providerModelCatalog],
   );
@@ -314,11 +338,15 @@ export default function ProviderSelectionEmptyState({
                   })}
                 />
                 <CommandList className="max-h-[350px]">
-                  {modelSearchQuery.trim() ? (
+                  {visibleProviderGroups.length === 0 ? (
                     <CommandEmpty>
-                      {t("providerSelection.noModelsFound", {
-                        defaultValue: "No models found.",
-                      })}
+                      {modelSearchQuery.trim()
+                        ? t("providerSelection.noModelsFound", {
+                            defaultValue: "No models found.",
+                          })
+                        : t("providerSelection.noProvidersFound", {
+                            defaultValue: "No model providers available.",
+                          })}
                     </CommandEmpty>
                   ) : null}
                   {visibleProviderGroups.map((group, idx) => (
@@ -353,7 +381,7 @@ export default function ProviderSelectionEmptyState({
                     >
                       {group.models.length === 0 && providerModelsLoading ? (
                         <CommandItem disabled className="ml-4 border-l border-border/40 pl-4 text-muted-foreground">
-                          {t("providerSelection.loadingModels", { defaultValue: "Loading models…" })}
+                          {t("providerSelection.loadingModels", { defaultValue: "Loading models..." })}
                         </CommandItem>
                       ) : null}
                       {(modelSearchQuery.trim() || expandedProviders.has(group.id) ? group.models : []).map((model) => {
@@ -407,7 +435,7 @@ export default function ProviderSelectionEmptyState({
                 }),
                 opencode: t("providerSelection.readyPrompt.opencode", {
                   model: opencodeModel,
-                  defaultValue: "Ready with OpenCode {{model}}",
+                  defaultValue: "Ready with OpenCode (Local) {{model}}",
                 }),
               }[provider]
             }

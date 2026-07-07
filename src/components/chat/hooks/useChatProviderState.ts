@@ -9,13 +9,15 @@ import type {
   ProviderModelsDefinition,
 } from '../../../types/app';
 
+const PROVIDER_ORDER: LLMProvider[] = ['claude', 'cursor', 'codex', 'gemini', 'antigravity', 'opencode'];
+
 const FALLBACK_DEFAULT_MODEL: Record<LLMProvider, string> = {
   claude: 'opus',
   cursor: 'gpt-5.3-codex',
   codex: 'gpt-5.4',
   gemini: 'gemini-3.1-pro-preview',
   antigravity: 'Gemini 3.5 Flash (Medium)',
-  opencode: 'anthropic/claude-sonnet-4-5',
+  opencode: 'ollama/qwen3-coder:latest',
 };
 
 /**
@@ -156,7 +158,6 @@ export function useChatProviderState({ selectedSession }: UseChatProviderStateAr
   }, []);
 
   const loadProviderModels = useCallback(async (options: { bypassCache?: boolean } = {}) => {
-    const providers: LLMProvider[] = ['claude', 'cursor', 'codex', 'gemini', 'antigravity', 'opencode'];
     const requestId = providerModelsRequestIdRef.current + 1;
     providerModelsRequestIdRef.current = requestId;
     const isHardRefresh = options.bypassCache === true;
@@ -169,7 +170,7 @@ export function useChatProviderState({ selectedSession }: UseChatProviderStateAr
 
     try {
       const results = await Promise.all(
-        providers.map(async (p) => {
+        PROVIDER_ORDER.map(async (p) => {
           const params = new URLSearchParams();
           if (options.bypassCache) {
             params.set('bypassCache', 'true');
@@ -193,7 +194,7 @@ export function useChatProviderState({ selectedSession }: UseChatProviderStateAr
       const nextCatalog: Partial<Record<LLMProvider, ProviderModelsDefinition>> = {};
       const nextCacheCatalog: Partial<Record<LLMProvider, ProviderModelsCacheInfo>> = {};
 
-      providers.forEach((p, i) => {
+      PROVIDER_ORDER.forEach((p, i) => {
         const entry = results[i];
         if (!entry) {
           return;
@@ -346,6 +347,27 @@ export function useChatProviderState({ selectedSession }: UseChatProviderStateAr
       }
     }
   }, [providerModelCatalog.antigravity, antigravityModel]);
+
+  useEffect(() => {
+    if (selectedSession?.id) {
+      return;
+    }
+
+    const currentCatalog = providerModelCatalog[provider];
+    if (!currentCatalog || currentCatalog.OPTIONS.length > 0) {
+      return;
+    }
+
+    const nextProvider = PROVIDER_ORDER.find((candidate) => (
+      providerModelCatalog[candidate]?.OPTIONS.length
+    ));
+    if (!nextProvider || nextProvider === provider) {
+      return;
+    }
+
+    setProvider(nextProvider);
+    localStorage.setItem('selected-provider', nextProvider);
+  }, [provider, providerModelCatalog, selectedSession?.id]);
 
   useEffect(() => {
     if (!selectedSession?.id) {
