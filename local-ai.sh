@@ -260,17 +260,7 @@ pull_model() {
   ollama pull "$MODEL_ID"
 }
 
-configure_opencode() {
-  if ! command_exists opencode; then
-    print_warn "opencode is not in PATH. Continuing because this script only writes OpenCode configuration."
-  fi
-
-  if ! command_exists node; then
-    fail "node is required to merge opencode.json without overwriting existing settings"
-  fi
-
-  print_step "Writing OpenCode config: $CONFIG_FILE."
-
+write_opencode_config_with_node() {
   CONFIG_FILE="$CONFIG_FILE" \
   MODEL_ID="$MODEL_ID" \
   MODEL_DISPLAY_NAME="$MODEL_DISPLAY_NAME" \
@@ -342,6 +332,98 @@ fs.writeFileSync(tempFile, `${JSON.stringify(config, null, 2)}\n`, {
 });
 fs.renameSync(tempFile, configFile);
 NODE
+}
+
+write_opencode_config_with_python() {
+  CONFIG_FILE="$CONFIG_FILE" \
+  MODEL_ID="$MODEL_ID" \
+  MODEL_DISPLAY_NAME="$MODEL_DISPLAY_NAME" \
+  PROVIDER_ID="$PROVIDER_ID" \
+  PROVIDER_NAME="$PROVIDER_NAME" \
+  OPENCODE_OLLAMA_BASE_URL="$OPENCODE_OLLAMA_BASE_URL" \
+    python3 <<'PYTHON'
+import json
+import os
+import sys
+
+
+def fail(message):
+    print(f"[local-ai] error: {message}", file=sys.stderr)
+    sys.exit(1)
+
+
+def object_or_empty(value):
+    if isinstance(value, dict):
+        return value
+
+    return {}
+
+
+config_file = os.environ["CONFIG_FILE"]
+model_id = os.environ["MODEL_ID"]
+model_display_name = os.environ["MODEL_DISPLAY_NAME"]
+provider_id = os.environ["PROVIDER_ID"]
+provider_name = os.environ["PROVIDER_NAME"]
+base_url = os.environ["OPENCODE_OLLAMA_BASE_URL"]
+
+config = {}
+
+if os.path.exists(config_file):
+    with open(config_file, "r", encoding="utf-8") as existing_file:
+        existing_config = existing_file.read().strip()
+
+    if existing_config:
+        try:
+            config = json.loads(existing_config)
+        except json.JSONDecodeError as error:
+            fail(f"{config_file} exists but is not valid JSON: {error}")
+
+config = object_or_empty(config)
+config["$schema"] = config.get("$schema") or "https://opencode.ai/config.json"
+config["provider"] = object_or_empty(config.get("provider"))
+
+provider = object_or_empty(config["provider"].get(provider_id))
+provider["npm"] = "@ai-sdk/openai-compatible"
+provider["name"] = provider_name
+provider["options"] = object_or_empty(provider.get("options"))
+provider["options"]["baseURL"] = base_url
+provider["models"] = object_or_empty(provider.get("models"))
+
+model = object_or_empty(provider["models"].get(model_id))
+model["name"] = model_display_name
+provider["models"][model_id] = model
+
+config["provider"][provider_id] = provider
+config["model"] = f"{provider_id}/{model_id}"
+config["small_model"] = f"{provider_id}/{model_id}"
+
+config_dir = os.path.dirname(config_file) or "."
+os.makedirs(config_dir, exist_ok=True)
+
+temp_file = f"{config_file}.tmp-{os.getpid()}"
+flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+with os.fdopen(os.open(temp_file, flags, 0o644), "w", encoding="utf-8") as output_file:
+    json.dump(config, output_file, indent=2)
+    output_file.write("\n")
+
+os.replace(temp_file, config_file)
+PYTHON
+}
+
+configure_opencode() {
+  if ! command_exists opencode; then
+    print_warn "opencode is not in PATH. Continuing because this script only writes OpenCode configuration."
+  fi
+
+  print_step "Writing OpenCode config: $CONFIG_FILE."
+
+  if command_exists node; then
+    write_opencode_config_with_node
+  elif command_exists python3; then
+    write_opencode_config_with_python
+  else
+    fail "node or python3 is required to merge opencode.json without overwriting existing settings"
+  fi
 }
 
 print_summary() {
